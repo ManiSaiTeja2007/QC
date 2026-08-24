@@ -1,0 +1,17 @@
+# Core Quantum Computing & Simulation (CPU-based)
+qiskit
+qiskit-aer
+
+# Visualization & Circuit Diagram Generation
+matplotlib
+pylatexenc
+
+# Scientific Computing & Testing
+numpy
+scipy
+pytest
+
+# Document & PDF Processing for Analysis & Verification
+pypdf
+pymupdf
+python-docx

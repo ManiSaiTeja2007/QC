@@ -1,0 +1,33 @@
+           
+      a_0: 
+           
+      a_1: 
+           
+      a_2: 
+           
+      a_3: 
+           
+      b_0: 
+           
+      b_1: 
+           
+      b_2: 
+           
+      b_3: 
+           
+      cin: 
+           
+   ctrl_0: 
+           
+   ctrl_1: 
+           
+   ctrl_2: 
+           
+   ctrl_3: 
+           
+mux_anc_0: 
+           
+mux_anc_1: 
+           
+mux_anc_2: 
+           
