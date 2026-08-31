@@ -2,6 +2,10 @@
 qiskit
 qiskit-aer
 
+# Interactive Web Dashboard & Plotting
+streamlit
+plotly
+
 # Visualization & Circuit Diagram Generation
 matplotlib
 pylatexenc

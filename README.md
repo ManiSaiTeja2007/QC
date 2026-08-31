@@ -2,19 +2,33 @@
 
 [![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/)
 [![Qiskit 2.x](https://img.shields.io/badge/Qiskit-2.x-purple.svg)](https://qiskit.org/)
-[![Tests](https://img.shields.io/badge/pytest-19%20passed%20(100%25)-brightgreen.svg)]()
+[![Streamlit Dashboard](https://img.shields.io/badge/Streamlit-Live%20Dashboard-red.svg)](https://streamlit.io/)
+[![Tests](https://img.shields.io/badge/pytest-20%20passed%20(100%25)-brightgreen.svg)]()
 [![Hardware](https://img.shields.io/badge/platform-CPU%20Only-success.svg)]()
 
-Complete replication and verification suite for the IEEE Transactions on Emerging Topics in Computing (TETC 2026) paper:
+Complete replication, verification, and interactive dashboard suite for the IEEE Transactions on Emerging Topics in Computing (TETC 2026) paper:
 
 > **"A New Quantum Efficient Fault Tolerant Parity Preserving Clifford + T ALU"**  
 > *S. S. Tehrani, H. Aghababa, M. H. Majidi, and B. Safaei (2026)*
 
 ---
 
-## 🔬 Architectural Summary
+## 🌐 Interactive Streamlit Dashboard & Live Simulator
 
-This project implements the dual fault-tolerant Quantum Arithmetic Logic Unit (QALU) combining **parity-preserving logic** with **Clifford+T fault-tolerant universal synthesis**:
+Launch the live interactive Streamlit dashboard:
+
+```bash
+streamlit run app.py
+```
+
+- **Live 3D Bloch Sphere Explorer**: Interactive Plotly rendering of qubit Bloch vectors $(x, y, z)$ at every gate step.
+- **Step Slider**: Move through gate execution step-by-step to watch quantum state evolution live.
+- **28 Table VI Operations Selector**: Test all logic and arithmetic ALU operations interactively.
+- **Real-Time Fault-Tolerance Verification**: Live checks for Parity Preservation ($P_{\text{in}} = P_{\text{out}}$) and Reversibility.
+
+---
+
+## 🔬 Architectural Summary
 
 1. **5×5 FALFG Gate (Figures 4 & 5)**:
    - Full Adder/Subtractor and 24-function Arithmetic & Logic Function Generator.
@@ -39,7 +53,8 @@ This project implements the dual fault-tolerant Quantum Arithmetic Logic Unit (Q
 
 ```text
 .
-├── requirements.txt            # Clean, unpinned CPU-only dependencies
+├── app.py                      # Interactive Streamlit dashboard & live simulator
+├── requirements.txt            # CPU-only dependencies (including Streamlit & Plotly)
 ├── README.md                   # Complete architectural documentation
 ├── src/                        # Modular source code
 │   ├── gates/                  # Fundamental reversible and Clifford+T gates
@@ -50,119 +65,42 @@ This project implements the dual fault-tolerant Quantum Arithmetic Logic Unit (Q
 │   │   ├── one_bit_alu.py      # 1-bit 28-operation Parity-Preserving ALU
 │   │   ├── n_bit_alu.py        # Scalable N-bit & 4-bit ALU architecture
 │   │   └── uncomputation.py    # Garbage-free Bennett uncomputation
-│   └── simulation/             # Verification and simulation engine
+│   └── simulation/             # Verification, metrics, and visualizer engine
 │       ├── verifier.py         # Exhaustive Table IV, V, VI & parity/reversibility verifiers
 │       ├── cost_metrics.py     # Hardware cost & theoretical scaling analyzer
-│       └── fidelity_simulator.py # Aer shot-based & state fidelity simulator
-├── tests/                      # Automated pytest test suite (19 test cases)
-│   ├── test_gates.py           # Unit tests for fundamental gates
-│   ├── test_falfg.py           # Verification of FALFG (Table IV & V)
-│   ├── test_one_bit_alu.py     # Verification of 1-bit ALU (Table VI 28 ops)
-│   ├── test_n_bit_alu.py       # Scaling & 4-bit ALU validation
-│   ├── test_uncomputation.py   # Verification of Bennett uncomputation
-│   └── test_metrics.py         # Verification of cost equations & T-metrics
-├── experiments/                # Replication & visualization scripts
+│       ├── fidelity_simulator.py # Aer shot-based & state fidelity simulator
+│       └── step_visualizer.py  # Step-by-step gate evolution & 3D Bloch visualizer
+├── tests/                      # Automated pytest test suite (20 test cases)
+├── experiments/                # Verification and visualization scripts
 │   ├── run_all_verifications.py    # Master paper verification script
 │   ├── generate_circuit_diagrams.py # Exports all circuit diagrams (PNG & text)
-│   └── plot_histograms_fidelity.py  # Replicates Figures 11 & 12
+│   ├── plot_histograms_fidelity.py  # Replicates Figures 11 & 12
+│   └── visualize_circuit_step_by_step.py # Step-by-step Bloch trajectory generator
 └── results/                    # Generated outputs, figures, and reports
-    ├── verification_report.txt # Full text verification report
-    ├── verification_report.md  # Markdown verification summary
-    ├── circuits/               # Exported circuit diagrams (Fig 4, 5, 7, 8, 9, 10)
-    └── figures/                # Publication plots (Fig 11 histograms, Fig 12 fidelity)
 ```
 
 ---
 
 ## 🚀 Quickstart & Usage
 
-### 1. Requirements & Setup
-The project runs entirely on **CPU** without GPU or cuDNN requirements:
-
+### 1. Launch Interactive Streamlit Dashboard
 ```bash
-pip install -r requirements.txt
+streamlit run app.py
 ```
 
 ### 2. Run the Full Test Suite
-Execute the 19 automated unit tests:
-
 ```bash
 pytest -v tests/
 ```
 
 ### 3. Run the Master Paper Verification
-Run the verification suite across all tables, gates, and formulas:
-
 ```bash
 python experiments/run_all_verifications.py
 ```
 
-### 4. Export Circuit Diagrams & Reproduce Publication Figures
-Generate circuit diagrams and publication figures (Figures 11 & 12):
-
+### 4. Export Circuit Diagrams & Step Visualizations
 ```bash
 python experiments/generate_circuit_diagrams.py
 python experiments/plot_histograms_fidelity.py
-```
-
----
-
-## 📊 Verification & Comparison Results
-
-### Table IV: FALFG 32-State Truth Table Verification
-- **Permutation Status**: 100% Bijective (32 unique outputs from 32 inputs).
-- **Parity Preservation**: $P_{\text{in}} = P_{\text{out}}$ for all 32 states ($100\%$).
-- **State Accuracy**: 32/32 state matches against Table IV.
-
-### Table VI: 1-Bit ALU 28-Operation Summary
-
-| No | Function | Select $(S_0, S_1, S_2, S_3, M)$ | Formula | Verification Status |
-|:---|:---|:---:|:---|:---:|
-| 1 | AND | $(0, 0, 0, 0, 0)$ | $A \cdot B$ | **PASS (100%)** |
-| 2 | $A'B$ ($A < B$) | $(0, 1, 0, 0, 0)$ | $A' \cdot B$ | **PASS (100%)** |
-| 3 | OR | $(1, 0, 0, 0, 0)$ | $A + B$ | **PASS (100%)** |
-| 4 | $A' + B$ | $(1, 1, 0, 0, 0)$ | $A' + B$ | **PASS (100%)** |
-| 5 | XOR ($A \ne B$) | $(0, 0, 1, 0, 0)$ | $A \oplus B$ | **PASS (100%)** |
-| 6 | XNOR ($A = B$) | $(1, 0, 1, 0, 0)$ | $(A \oplus B)'$ | **PASS (100%)** |
-| 7 | $AB'$ ($A > B$) | $(0, 0, 0, 1, 0)$ | $A \cdot B'$ | **PASS (100%)** |
-| 8 | NOR | $(0, 1, 0, 1, 0)$ | $(A + B)'$ | **PASS (100%)** |
-| 9 | $A + B'$ | $(1, 0, 0, 1, 0)$ | $A + B'$ | **PASS (100%)** |
-| 10 | NAND | $(1, 1, 0, 1, 0)$ | $(A \cdot B)'$ | **PASS (100%)** |
-| 11 | Transfer B | $(0, 0, 1, 1, 0)$ | $B$ | **PASS (100%)** |
-| 12 | Complement B | $(0, 1, 1, 1, 0)$ | $B'$ | **PASS (100%)** |
-| 13 | Half Adder | $(0, 0, 1, 0, 1)$ | $\text{Sum} = A \oplus B, \text{Cout} = AB$ | **PASS (100%)** |
-| 14 | Half Subtractor | $(0, 1, 1, 0, 1)$ | $\text{Diff} = A \oplus B, \text{Bout} = A'B$ | **PASS (100%)** |
-| 15 | Full Adder | $(C_{\text{in}}, 0, 1, 0, 1)$ | $\text{Sum} = A \oplus B \oplus C_{\text{in}}$ | **PASS (100%)** |
-| 16 | Full Subtractor | $(B_{\text{in}}, 1, 1, 0, 1)$ | $\text{Diff} = A \oplus B \oplus B_{\text{in}}$ | **PASS (100%)** |
-| 17 | Increment A | $(1, 0, 1, 0, 1)$ | $A + 1$ | **PASS (100%)** |
-| 18 | Decrement A | $(1, 1, 1, 0, 1)$ | $A - 1$ | **PASS (100%)** |
-| 19 | Set | $(0, 0, 1, 1, 1)$ | $1$ | **PASS (100%)** |
-| 20 | Reset | $(0, 1, 1, 1, 1)$ | $0$ | **PASS (100%)** |
-| 21 | Transfer A | $(0, 0, 1, 0, 1)$ | $A$ | **PASS (100%)** |
-| 22 | Complement A | $(0, 1, 1, 0, 1)$ | $A'$ | **PASS (100%)** |
-
-### Benchmark Comparison (Table VIII & IX in Paper)
-
-| ALU Architecture | Quantum Cost (QC) | Delay | Garbage Outputs | $T$-Count | $T$-Depth | Parity Preserving |
-|:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Proposed 1-Bit ALU** | **26** | **20** | **3** | **22** | **9** | **Yes** |
-| Moradi et al. [29] | 33 | 29 | 4 | 29 | 11 | No |
-| Sen et al. [31] | 56 | 40 | 8 | 44 | 16 | No |
-| **Proposed 4-Bit ALU** | **128** | **71** | **15** | **109** | **36** | **Yes** |
-| Moradi et al. [29] (4-Bit) | 164 | 108 | 20 | 145 | 45 | No |
-| Sen et al. [31] (4-Bit) | 276 | 152 | 38 | 216 | 64 | No |
-
----
-
-## 📜 Citation
-
-If you use this replication codebase in your research, please cite the target IEEE paper:
-
-```bibtex
-@article{tehrani2026quantumalu,
-  title={A New Quantum Efficient Fault Tolerant Parity Preserving Clifford + T ALU},
-  author={Tehrani, S. S. and Aghababa, H. and Majidi, M. H. and Safaei, B.},
-  journal={IEEE Transactions on Emerging Topics in Computing},
-  year={2026}
-}
+python experiments/visualize_circuit_step_by_step.py
 ```

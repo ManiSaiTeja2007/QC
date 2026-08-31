@@ -1,0 +1,14 @@
+[server]
+port = 8502
+address = "0.0.0.0"
+runOnSave = true
+headless = true
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+primaryColor = "#2563eb"
+backgroundColor = "#07090e"
+secondaryBackgroundColor = "#0d1321"
+textColor = "#f1f5f9"

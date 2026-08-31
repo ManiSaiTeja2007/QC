@@ -17,6 +17,11 @@ from .fidelity_simulator import (
     run_figure11_reproduction,
     run_figure12_reproduction,
 )
+from .step_visualizer import (
+    track_circuit_evolution,
+    plot_bloch_trajectories,
+    plot_step_probability_heatmap,
+)
 
 __all__ = [
     "verify_falfg_table4",
@@ -30,4 +35,7 @@ __all__ = [
     "calculate_state_fidelity",
     "run_figure11_reproduction",
     "run_figure12_reproduction",
+    "track_circuit_evolution",
+    "plot_bloch_trajectories",
+    "plot_step_probability_heatmap",
 ]
