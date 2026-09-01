@@ -9,8 +9,8 @@ in Section IV.C, Figures 6-8, and Table VI of:
 
 from typing import Dict, Tuple, Any, Callable
 from qiskit import QuantumCircuit
-from app.gates.basic_gates import add_fredkin_ncv, add_fredkin_clifford_t
-from app.modules.falfg import build_falfg_ncv, build_falfg_clifford_t
+from backend.app.gates.basic_gates import add_fredkin_ncv, add_fredkin_clifford_t
+from backend.app.modules.falfg import build_falfg_ncv, build_falfg_clifford_t
 
 
 # Complete Table VI Operation Specifications

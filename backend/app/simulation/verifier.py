@@ -13,14 +13,14 @@ import numpy as np
 from qiskit import QuantumCircuit
 from qiskit_aer import AerSimulator
 
-from app.modules.falfg import (
+from backend.app.modules.falfg import (
     build_falfg_clifford_t,
     build_falfg_ncv,
     TABLE_IV_TRUTH_TABLE,
     FALFG_LOGIC_MODES,
     FALFG_ARITHMETIC_MODES,
 )
-from app.modules.one_bit_alu import (
+from backend.app.modules.one_bit_alu import (
     build_one_bit_alu_clifford_t,
     build_one_bit_alu_ncv,
     ALU_LOGIC_OPERATIONS,

@@ -5,13 +5,126 @@ interface SingleGatePanelProps {
   onSimulateSingleGate: (gateName: string, inputBits: number[], params?: number[]) => void;
 }
 
+const GateSchematicDiagram: React.FC<{ gate: GateDefinition }> = ({ gate }) => {
+  const numQubits = gate.numQubits;
+  const height = numQubits === 1 ? 54 : numQubits === 2 ? 80 : 106;
+  const width = 240;
+
+  return (
+    <div className="gate-schematic-wrapper">
+      <div className="schematic-title">
+        <span>Circuit Diagram Representation</span>
+        {gate.mathMapping && <span className="mapping-badge">{gate.mathMapping}</span>}
+      </div>
+
+      <svg width={width} height={height} className="gate-schematic-svg">
+        {numQubits === 1 && (
+          <g>
+            <text x={14} y={28} className="schematic-q-lbl" dominantBaseline="central">
+              Q0
+            </text>
+            <line x1={40} y1={28} x2={200} y2={28} className="schematic-wire" />
+            <rect x={100} y={15} width={26} height={26} className="schematic-gate-box" />
+            <text x={113} y={28} className="schematic-gate-lbl" dominantBaseline="central" textAnchor="middle">
+              {gate.name}
+            </text>
+          </g>
+        )}
+
+        {numQubits === 2 && (
+          <g>
+            <text x={14} y={24} className="schematic-q-lbl" dominantBaseline="central">
+              Q0 (A)
+            </text>
+            <text x={14} y={58} className="schematic-q-lbl" dominantBaseline="central">
+              Q1 (B)
+            </text>
+
+            <line x1={60} y1={24} x2={200} y2={24} className="schematic-wire" />
+            <line x1={60} y1={58} x2={200} y2={58} className="schematic-wire" />
+
+            {gate.name === 'SWAP' || gate.name === 'iSWAP' ? (
+              <g>
+                <line x1={130} y1={24} x2={130} y2={58} className="schematic-conn-line" />
+                <circle cx={130} cy={24} r={5} className="schematic-ctrl-dot" />
+                <circle cx={130} cy={58} r={5} className="schematic-ctrl-dot" />
+              </g>
+            ) : gate.category === 'controlled' ? (
+              <g>
+                <line x1={130} y1={24} x2={130} y2={58} className="schematic-conn-line" />
+                <circle cx={130} cy={24} r={5} className="schematic-ctrl-dot" />
+                {gate.name === 'CX' ? (
+                  <g>
+                    <circle cx={130} cy={58} r={8} className="schematic-target-circle" />
+                    <line x1={125} y1={58} x2={135} y2={58} className="schematic-target-cross" />
+                    <line x1={130} y1={53} x2={130} y2={63} className="schematic-target-cross" />
+                  </g>
+                ) : (
+                  <g>
+                    <rect x={118} y={45} width={24} height={24} className="schematic-gate-box" />
+                    <text x={130} y={57} className="schematic-gate-lbl" dominantBaseline="central" textAnchor="middle">
+                      {gate.name.replace('C', '')}
+                    </text>
+                  </g>
+                )}
+              </g>
+            ) : (
+              <g>
+                <rect x={117} y={11} width={26} height={26} className="schematic-gate-box" />
+                <text x={130} y={24} className="schematic-gate-lbl" dominantBaseline="central" textAnchor="middle">
+                  {gate.name}
+                </text>
+                <rect x={117} y={45} width={26} height={26} className="schematic-gate-box" />
+                <text x={130} y={58} className="schematic-gate-lbl" dominantBaseline="central" textAnchor="middle">
+                  {gate.name}
+                </text>
+              </g>
+            )}
+          </g>
+        )}
+
+        {numQubits === 3 && (
+          <g>
+            <text x={14} y={20} className="schematic-q-lbl" dominantBaseline="central">
+              Q0 (A)
+            </text>
+            <text x={14} y={52} className="schematic-q-lbl" dominantBaseline="central">
+              Q1 (B)
+            </text>
+            <text x={14} y={84} className="schematic-q-lbl" dominantBaseline="central">
+              Q2 (C)
+            </text>
+
+            <line x1={60} y1={20} x2={200} y2={20} className="schematic-wire" />
+            <line x1={60} y1={52} x2={200} y2={52} className="schematic-wire" />
+            <line x1={60} y1={84} x2={200} y2={84} className="schematic-wire" />
+
+            <line x1={130} y1={20} x2={130} y2={84} className="schematic-conn-line" />
+            <circle cx={130} cy={20} r={5} className="schematic-ctrl-dot" />
+            <circle cx={130} cy={52} r={5} className="schematic-ctrl-dot" />
+
+            {gate.name === 'CSWAP' ? (
+              <circle cx={130} cy={84} r={5} className="schematic-ctrl-dot" />
+            ) : (
+              <g>
+                <circle cx={130} cy={84} r={8} className="schematic-target-circle" />
+                <line x1={125} y1={84} x2={135} y2={84} className="schematic-target-cross" />
+                <line x1={130} y1={79} x2={130} y2={89} className="schematic-target-cross" />
+              </g>
+            )}
+          </g>
+        )}
+      </svg>
+    </div>
+  );
+};
+
 export const SingleGatePanel: React.FC<SingleGatePanelProps> = ({ onSimulateSingleGate }) => {
   const [selectedGateName, setSelectedGateName] = useState<string>('H');
   const [inputStateStr, setInputStateStr] = useState<string>('0');
   const [paramTheta, setParamTheta] = useState<number>(1.570796); // π/2
 
   const currentGate = GATE_REGISTRY.find((g) => g.name === selectedGateName) || GATE_REGISTRY[1]; // default H
-
   const numQubits = currentGate.numQubits;
 
   // Derive input_bits array from selected state string
@@ -122,6 +235,9 @@ export const SingleGatePanel: React.FC<SingleGatePanelProps> = ({ onSimulateSing
           🚀 Simulate Gate Action
         </button>
       </div>
+
+      {/* Graphical Circuit Schematic Diagram */}
+      <GateSchematicDiagram gate={currentGate} />
 
       {/* Gate Metadata Inspector */}
       <div className="lab-info-card">

@@ -1158,6 +1158,148 @@ select:hover {
   overflow: hidden;
 }
 
+.gate-step-toggle-dock {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #080c14;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  padding: 6px 12px;
+}
+
+.gate-flow-lbl {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: #38bdf8;
+}
+
+.gate-flow-lbl b {
+  color: #34d399;
+}
+
+.step-btn-group {
+  display: flex;
+  gap: 6px;
+}
+
+.target-select-dock {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.target-select {
+  background: #0d1527;
+  border: 1px solid #334155;
+  color: #f1f5f9;
+  border-radius: 4px;
+  padding: 2px 4px;
+  font-size: 0.75rem;
+}
+
+.builder-gate-box.selected {
+  stroke: #f43f5e !important;
+  stroke-width: 2px;
+  fill: #881337 !important;
+}
+
+.builder-multi-line.selected {
+  stroke: #f43f5e !important;
+  stroke-width: 2.5px;
+}
+
+.builder-target-circle.selected {
+  stroke: #f43f5e !important;
+  fill: #881337 !important;
+}
+
+/* ─── Gate Schematic Diagram (Single Gate Lab) ────────────────────────────── */
+.gate-schematic-wrapper {
+  background: #060911;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+
+}
+
+.schematic-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.76rem;
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
+
+.mapping-badge {
+  background: #0f172a;
+  border: 1px solid #3b82f6;
+  color: #38bdf8;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.gate-schematic-svg {
+  background: #030712;
+  border: 1px solid #111827;
+  border-radius: 4px;
+  display: block;
+  margin: 0 auto;
+}
+
+.schematic-q-lbl {
+  fill: #94a3b8;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.schematic-wire {
+  stroke: #334155;
+  stroke-width: 2px;
+}
+
+.schematic-conn-line {
+  stroke: #38bdf8;
+  stroke-width: 2px;
+}
+
+.schematic-ctrl-dot {
+  fill: #38bdf8;
+}
+
+.schematic-target-circle {
+  fill: #0d1527;
+  stroke: #38bdf8;
+  stroke-width: 2px;
+}
+
+.schematic-target-cross {
+  stroke: #38bdf8;
+  stroke-width: 2px;
+}
+
+.schematic-gate-box {
+  fill: #0f172a;
+  stroke: #3b82f6;
+  stroke-width: 1.5px;
+  rx: 3px;
+}
+
+.schematic-gate-lbl {
+  fill: #f8fafc;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: bold;
+}
+
 
 
 

@@ -8,7 +8,7 @@ Arithmetic & Logic Function Generator, as proposed in Section IV.A-B of:
 
 from typing import Dict, Tuple, Any
 from qiskit import QuantumCircuit
-from app.gates.basic_gates import add_cv, add_cv_dag
+from backend.app.gates.basic_gates import add_cv, add_cv_dag
 
 
 # Theoretical Table IV Truth Table mapping for all 32 states (Index -> Output Decimal)

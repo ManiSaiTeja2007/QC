@@ -17,11 +17,11 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.gates.basic_gates import build_fredkin_circuit
-from src.modules.falfg import build_falfg_clifford_t
-from src.modules.one_bit_alu import build_one_bit_alu_clifford_t
-from src.modules.uncomputation import build_uncomputed_adder_subtractor
-from src.simulation.step_visualizer import (
+from backend.app.gates.basic_gates import build_fredkin_circuit
+from backend.app.modules.falfg import build_falfg_clifford_t
+from backend.app.modules.one_bit_alu import build_one_bit_alu_clifford_t
+from backend.app.modules.uncomputation import build_uncomputed_adder_subtractor
+from backend.app.simulation.step_visualizer import (
     track_circuit_evolution,
     plot_bloch_trajectories,
     plot_step_probability_heatmap,

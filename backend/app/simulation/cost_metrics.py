@@ -7,7 +7,7 @@ the theoretical formulas in Equations (3)-(7) of the IEEE 2026 paper.
 
 from typing import Dict, Any
 from qiskit import QuantumCircuit
-from app.gates.clifford_t_library import count_t_gates, calculate_t_depth, get_circuit_metrics
+from backend.app.gates.clifford_t_library import count_t_gates, calculate_t_depth, get_circuit_metrics
 
 
 def analyze_circuit_cost(qc: QuantumCircuit, circuit_name: str = "") -> Dict[str, Any]:

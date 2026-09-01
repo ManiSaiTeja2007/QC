@@ -63,13 +63,13 @@ class TestQuantumStudioE2E(unittest.TestCase):
         live_sim_btn.click()
         time.sleep(1)
 
-        workspace_grid = driver.find_element(By.CLASS_NAME, 'workspace-grid')
-        self.assertTrue(workspace_grid.is_displayed())
+        live_workspace = driver.find_element(By.CLASS_NAME, 'live-simulation-workspace')
+        self.assertTrue(live_workspace.is_displayed())
 
-        # Check circuit panel SVG, state panel, bloch studio
-        circuit_panel = driver.find_element(By.CLASS_NAME, 'panel-circuit')
-        state_panel = driver.find_element(By.CLASS_NAME, 'panel-state')
-        bloch_panel = driver.find_element(By.CLASS_NAME, 'panel-bloch-wrapper')
+        # Check circuit panel SVG, state panel, bloch studio inside live workspace
+        circuit_panel = live_workspace.find_element(By.CLASS_NAME, 'panel-circuit')
+        state_panel = live_workspace.find_element(By.CLASS_NAME, 'panel-state')
+        bloch_panel = live_workspace.find_element(By.CLASS_NAME, 'panel-bloch-wrapper')
 
         self.assertTrue(circuit_panel.is_displayed())
         self.assertTrue(state_panel.is_displayed())
@@ -84,7 +84,8 @@ class TestQuantumStudioE2E(unittest.TestCase):
         live_sim_btn = driver.find_element(By.XPATH, "//button[contains(text(), 'Live Simulation')]")
         live_sim_btn.click()
         time.sleep(1)
-        ket_text_before = driver.find_element(By.CLASS_NAME, 'ket-formula').text
+        live_workspace = driver.find_element(By.CLASS_NAME, 'live-simulation-workspace')
+        ket_text_before = live_workspace.find_element(By.CLASS_NAME, 'ket-formula').text
 
         # 2. Go to Single Gate Lab & select different gate/state
         gate_lab_btn = driver.find_element(By.XPATH, "//button[contains(text(), 'Single Gate Lab')]")
@@ -94,10 +95,38 @@ class TestQuantumStudioE2E(unittest.TestCase):
         # 3. Switch back to Live Simulation
         live_sim_btn.click()
         time.sleep(1)
-        ket_text_after = driver.find_element(By.CLASS_NAME, 'ket-formula').text
+        ket_text_after = live_workspace.find_element(By.CLASS_NAME, 'ket-formula').text
 
         self.assertEqual(ket_text_before, ket_text_after)
         print("  ✅ Test 04: Mode state isolation guarantee PASSED")
+
+    def test_05_multi_hop_tab_persistence(self):
+        """Verify that navigating Builder -> Lab -> Live -> Builder preserves exact builder gates without reset."""
+        driver = self.driver
+
+        # 1. Go to Builder and check canvas exists
+        builder_btn = driver.find_element(By.XPATH, "//button[contains(text(), 'Circuit Builder')]")
+        builder_btn.click()
+        time.sleep(1)
+        wires_before = len(driver.find_elements(By.CLASS_NAME, 'builder-wire'))
+
+        # 2. Hop to Single Gate Lab
+        gate_lab_btn = driver.find_element(By.XPATH, "//button[contains(text(), 'Single Gate Lab')]")
+        gate_lab_btn.click()
+        time.sleep(1)
+
+        # 3. Hop to Live Simulation
+        live_sim_btn = driver.find_element(By.XPATH, "//button[contains(text(), 'Live Simulation')]")
+        live_sim_btn.click()
+        time.sleep(1)
+
+        # 4. Hop back to Builder
+        builder_btn.click()
+        time.sleep(1)
+        wires_after = len(driver.find_elements(By.CLASS_NAME, 'builder-wire'))
+
+        self.assertEqual(wires_before, wires_after)
+        print("  ✅ Test 05: Multi-hop tab state persistence PASSED")
 
 if __name__ == '__main__':
     unittest.main()

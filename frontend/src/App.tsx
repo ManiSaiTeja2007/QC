@@ -29,12 +29,25 @@ export const App: React.FC = () => {
         onRunSimulation={() => setAppMode('live-simulation')}
       />
 
-      {/* Discriminated Workspace Router */}
-      {appMode === 'builder' ? (
+      {/* Persistent Discriminated Workspaces (preserves state across mode tab switches) */}
+      <div
+        className="workspace-tab-container"
+        style={{ display: appMode === 'builder' ? 'flex' : 'none', flex: 1, minHeight: 0 }}
+      >
         <BuilderWorkspace />
-      ) : appMode === 'single-gate-lab' ? (
+      </div>
+
+      <div
+        className="workspace-tab-container"
+        style={{ display: appMode === 'single-gate-lab' ? 'flex' : 'none', flex: 1, minHeight: 0 }}
+      >
         <SingleGateWorkspace />
-      ) : (
+      </div>
+
+      <div
+        className="workspace-tab-container"
+        style={{ display: appMode === 'live-simulation' ? 'flex' : 'none', flex: 1, minHeight: 0 }}
+      >
         <LiveSimulationWorkspace
           architecture={architecture}
           synthesis={synthesis}
@@ -43,7 +56,7 @@ export const App: React.FC = () => {
           onSynthChange={setSynthesis}
           onPresetChange={setPreset}
         />
-      )}
+      </div>
     </div>
   );
 };

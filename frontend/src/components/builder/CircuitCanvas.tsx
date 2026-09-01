@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { CustomGatePayload } from '../../services/api';
 
 export interface PlacedGate extends CustomGatePayload {
@@ -14,7 +14,7 @@ interface CircuitCanvasProps {
   onAddQubit: () => void;
   onRemoveQubit: () => void;
   onInputBitToggle: (qIdx: number) => void;
-  onPlaceGate: (qubit: number, step: number) => void;
+  onPlaceGate: (qubit: number, step: number, targetQubit?: number) => void;
   onRemoveGate: (gateId: string) => void;
   onClearCircuit: () => void;
 }
@@ -31,7 +31,10 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
   onRemoveGate,
   onClearCircuit,
 }) => {
-  const maxStep = Math.max(12, ...placedGates.map((g) => g.step + 1));
+  const [selectedGateId, setSelectedGateId] = useState<string | null>(null);
+  const [customTargetQubit, setCustomTargetQubit] = useState<number>(1);
+
+  const maxStep = Math.max(14, ...placedGates.map((g) => g.step + 2));
   const columns = Array.from({ length: maxStep }, (_, i) => i + 1);
 
   const rowHeight = 36;
@@ -41,6 +44,25 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
 
   const svgWidth = startX + maxStep * colWidth + 40;
   const svgHeight = startY + numQubits * rowHeight + 20;
+
+  // Keyboard shortcut: Delete or Backspace removes selected gate
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedGateId) {
+        onRemoveGate(selectedGateId);
+        setSelectedGateId(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedGateId, onRemoveGate]);
+
+  const handleCellClick = (q: number, col: number) => {
+    if (!selectedGate) return;
+    const isMulti = ['CX', 'CY', 'CZ', 'CH', 'CRX', 'CRY', 'CRZ', 'SWAP', 'ISWAP'].includes(selectedGate);
+    const targetQ = isMulti ? customTargetQubit : q;
+    onPlaceGate(q, col, targetQ);
+  };
 
   return (
     <article className="builder-canvas-card">
@@ -54,23 +76,51 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
           </button>
 
           <span className="qubits-count">Qubits: {numQubits}</span>
+
+          {selectedGate && ['CX', 'CY', 'CZ', 'CH', 'CRX', 'CRY', 'CRZ', 'SWAP', 'ISWAP'].includes(selectedGate) && (
+            <div className="target-select-dock">
+              <label>Target Wire:</label>
+              <select
+                value={customTargetQubit}
+                onChange={(e) => setCustomTargetQubit(parseInt(e.target.value))}
+                className="target-select"
+              >
+                {Array.from({ length: numQubits }).map((_, i) => (
+                  <option key={i} value={i}>
+                    Q{i}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         <div className="canvas-actions">
           {selectedGate && (
             <span className="active-placement-badge">
-              Active: <b>{selectedGate}</b> (click cell to place)
+              Active: <b>{selectedGate}</b> (click wire to place)
             </span>
           )}
+          {selectedGateId && (
+            <button
+              className="btn btn-xs btn-danger"
+              onClick={() => {
+                onRemoveGate(selectedGateId);
+                setSelectedGateId(null);
+              }}
+            >
+              🗑️ Delete Selected Gate (Del)
+            </button>
+          )}
           <button className="btn btn-xs btn-danger" onClick={onClearCircuit}>
-            🗑️ Clear Canvas
+            Clear Circuit
           </button>
         </div>
       </div>
 
       <div className="canvas-viewport">
         <svg className="builder-svg" width={svgWidth} height={svgHeight}>
-          {/* Step Headers */}
+          {/* Step Column Numbers */}
           {columns.map((col) => (
             <text
               key={col}
@@ -82,7 +132,7 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
             </text>
           ))}
 
-          {/* Qubit Wires & Toggle Labels */}
+          {/* Qubit Wires & Input Basis Toggles */}
           {Array.from({ length: numQubits }).map((_, q) => {
             const wireY = startY + q * rowHeight + rowHeight / 2;
             const bitVal = inputBits[q] ?? 0;
@@ -103,6 +153,7 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
                   onClick={() => onInputBitToggle(q)}
                   style={{ cursor: 'pointer' }}
                 >
+                  <title>Click to toggle initial input bit |0⟩ ↔ |1⟩</title>
                   <rect
                     x={42}
                     y={wireY - 9}
@@ -134,7 +185,7 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
             );
           })}
 
-          {/* Placement Cell Drop Targets */}
+          {/* Placement Drop Target Cells */}
           {Array.from({ length: numQubits }).map((_, q) => {
             const wireY = startY + q * rowHeight + rowHeight / 2;
             return columns.map((col) => {
@@ -147,16 +198,17 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
                   width={32}
                   height={28}
                   className={`builder-cell ${selectedGate ? 'droppable' : ''}`}
-                  onClick={() => onPlaceGate(q, col)}
+                  onClick={() => handleCellClick(q, col)}
                 />
               );
             });
           })}
 
-          {/* Placed Gates */}
+          {/* Placed Gates on Grid */}
           {placedGates.map((g) => {
             const colX = startX + (g.step - 1) * colWidth + colWidth / 2;
             const isMulti = g.qubits.length >= 2;
+            const isSelected = selectedGateId === g.id;
 
             if (isMulti) {
               const cY = startY + g.qubits[0] * rowHeight + rowHeight / 2;
@@ -164,17 +216,31 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
               return (
                 <g
                   key={g.id}
-                  onClick={() => onRemoveGate(g.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedGateId(isSelected ? null : g.id);
+                  }}
                   style={{ cursor: 'pointer' }}
                 >
-                  <title>Click to remove gate</title>
-                  <line x1={colX} y1={cY} x2={colX} y2={tY} className="builder-multi-line" />
+                  <title>{`${g.name} (Control: Q${g.qubits[0]}, Target: Q${g.qubits[1]}) — Click to select/delete`}</title>
+                  <line
+                    x1={colX}
+                    y1={cY}
+                    x2={colX}
+                    y2={tY}
+                    className={`builder-multi-line ${isSelected ? 'selected' : ''}`}
+                  />
                   <circle cx={colX} cy={cY} r={5} className="builder-ctrl-dot" />
-                  {g.name === 'SWAP' ? (
+                  {g.name === 'SWAP' || g.name === 'ISWAP' ? (
                     <circle cx={colX} cy={tY} r={5} className="builder-ctrl-dot" />
                   ) : (
                     <g>
-                      <circle cx={colX} cy={tY} r={8} className="builder-target-circle" />
+                      <circle
+                        cx={colX}
+                        cy={tY}
+                        r={8}
+                        className={`builder-target-circle ${isSelected ? 'selected' : ''}`}
+                      />
                       <line x1={colX - 5} y1={tY} x2={colX + 5} y2={tY} className="builder-target-cross" />
                       <line x1={colX} y1={tY - 5} x2={colX} y2={tY + 5} className="builder-target-cross" />
                     </g>
@@ -189,16 +255,19 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
             return (
               <g
                 key={g.id}
-                onClick={() => onRemoveGate(g.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedGateId(isSelected ? null : g.id);
+                }}
                 style={{ cursor: 'pointer' }}
               >
-                <title>Click to remove gate</title>
+                <title>{`${g.name} on Q${g.qubits[0]} — Click to select/delete`}</title>
                 <rect
                   x={colX - boxSize / 2}
                   y={qY - boxSize / 2}
                   width={boxSize}
                   height={boxSize}
-                  className="builder-gate-box"
+                  className={`builder-gate-box ${isSelected ? 'selected' : ''}`}
                 />
                 <text x={colX} y={qY} className="builder-gate-lbl">
                   {g.name}

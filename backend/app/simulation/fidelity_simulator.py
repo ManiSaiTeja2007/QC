@@ -10,8 +10,8 @@ from qiskit import QuantumCircuit
 from qiskit_aer import AerSimulator
 from qiskit.quantum_info import state_fidelity, Statevector
 
-from app.modules.falfg import build_falfg_clifford_t, build_falfg_ncv
-from app.modules.one_bit_alu import build_one_bit_alu_clifford_t, build_one_bit_alu_ncv
+from backend.app.modules.falfg import build_falfg_clifford_t, build_falfg_ncv
+from backend.app.modules.one_bit_alu import build_one_bit_alu_clifford_t, build_one_bit_alu_ncv
 
 
 def simulate_circuit_shots(

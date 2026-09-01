@@ -13,18 +13,18 @@ BACKEND_DIR = Path(__file__).resolve().parent.parent
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
-from app.schemas.simulation import SimulationRequest, CustomCircuitRequest, SingleGateRequest
-from app.gates.basic_gates import build_fredkin_circuit
-from app.modules.falfg import build_falfg_clifford_t, build_falfg_ncv
-from app.modules.one_bit_alu import (
+from backend.app.schemas.simulation import SimulationRequest, CustomCircuitRequest, SingleGateRequest
+from backend.app.gates.basic_gates import build_fredkin_circuit
+from backend.app.modules.falfg import build_falfg_clifford_t, build_falfg_ncv
+from backend.app.modules.one_bit_alu import (
     build_one_bit_alu_clifford_t,
     build_one_bit_alu_ncv,
     ALU_LOGIC_OPERATIONS,
     ALU_ARITHMETIC_OPERATIONS,
 )
-from app.modules.uncomputation import build_uncomputed_adder_subtractor
-from app.core.canonical_ir import build_canonical_circuit_ir
-from app.core.cost_metrics import analyze_circuit_cost
+from backend.app.modules.uncomputation import build_uncomputed_adder_subtractor
+from backend.app.core.canonical_ir import build_canonical_circuit_ir
+from backend.app.core.cost_metrics import analyze_circuit_cost
 
 
 app = FastAPI(

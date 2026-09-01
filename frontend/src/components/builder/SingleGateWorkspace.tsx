@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { SingleGatePanel } from './SingleGatePanel';
-import { TransportBar } from '../TransportBar';
 import { StatePanel } from '../StatePanel';
 import { StateSummaryStrip } from '../StateSummaryStrip';
 import { BlochPanel } from '../BlochPanel';
@@ -13,12 +12,10 @@ export const SingleGateWorkspace: React.FC = () => {
   const [params, setParams] = useState<number[]>([1.570796]);
 
   const [simulationData, setSimulationData] = useState<SimulationPayload | null>(null);
-  const [currentStep, setCurrentStep] = useState<number>(0);
+  const [currentStep, setCurrentStep] = useState<number>(1); // Default to Step 1 (Post-Gate)
   const [selectedQubit, setSelectedQubit] = useState<number>(0);
   const [measurementBasis, setMeasurementBasis] = useState<'Z' | 'X' | 'Y'>('Z');
   const [viewMode, setViewMode] = useState<'all' | 'grid' | 'focus'>('all');
-  const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const [speedMs, setSpeedMs] = useState<number>(300);
 
   // Auto-run simulation whenever gate, input bits, or params change
   useEffect(() => {
@@ -32,7 +29,7 @@ export const SingleGateWorkspace: React.FC = () => {
         });
         if (isSubscribed) {
           setSimulationData(data);
-          setCurrentStep(0);
+          setCurrentStep(1); // Show transformed state by default
         }
       } catch (err) {
         console.error('Failed to update single gate simulation:', err);
@@ -50,7 +47,9 @@ export const SingleGateWorkspace: React.FC = () => {
     if (gateParams) setParams(gateParams);
   };
 
-  const stepData = simulationData ? simulationData.steps[currentStep] : null;
+  const step0 = simulationData?.steps[0] || null;
+  const step1 = simulationData?.steps[1] || null;
+  const currentStepData = simulationData ? simulationData.steps[currentStep] : null;
   const qubitNames = simulationData?.qubit_names || ['Q0'];
 
   return (
@@ -60,26 +59,33 @@ export const SingleGateWorkspace: React.FC = () => {
         <SingleGatePanel onSimulateSingleGate={handleSimulateSingleGate} />
       </aside>
 
-      {/* Right Integrated 3D Simulation Laboratory */}
+      {/* Right Integrated Dual Before/After Comparison Laboratory */}
       <div className="single-gate-right-sim">
-        <TransportBar
-          currentStep={currentStep}
-          totalSteps={simulationData?.total_primitive_steps || 1}
-          totalOps={simulationData?.total_logical_ops || 1}
-          currentOpId={stepData?.logical_op_id || 0}
-          isPlaying={isPlaying}
-          speedMs={speedMs}
-          onReset={() => { setIsPlaying(false); setCurrentStep(0); }}
-          onPrev={() => { setIsPlaying(false); setCurrentStep((prev) => Math.max(0, prev - 1)); }}
-          onNext={() => { setIsPlaying(false); setCurrentStep((prev) => Math.min(simulationData?.total_primitive_steps || 1, prev + 1)); }}
-          onTogglePlay={() => setIsPlaying(!isPlaying)}
-          onStepChange={(step) => { setIsPlaying(false); setCurrentStep(step); }}
-          onSpeedChange={setSpeedMs}
-        />
+        {/* Step Selector Header */}
+        <div className="gate-step-toggle-dock">
+          <span className="gate-flow-lbl">
+            <b>{step0?.psi_ket || '|0⟩'}</b> &nbsp; ──[ <b>{gateName}</b> ]──→ &nbsp; <b>{step1?.psi_ket || '|+⟩'}</b>
+          </span>
+
+          <div className="step-btn-group">
+            <button
+              className={`btn btn-xs ${currentStep === 0 ? 'active' : ''}`}
+              onClick={() => setCurrentStep(0)}
+            >
+              Step 0: Initial State |ψ₀⟩
+            </button>
+            <button
+              className={`btn btn-xs ${currentStep === 1 ? 'active' : ''}`}
+              onClick={() => setCurrentStep(1)}
+            >
+              Step 1: Post-Gate State |ψ₁⟩
+            </button>
+          </div>
+        </div>
 
         <div className="single-gate-sim-panels">
           <StatePanel
-            stepData={stepData}
+            stepData={currentStepData}
             selectedQubit={selectedQubit}
             measurementBasis={measurementBasis}
             onBasisChange={setMeasurementBasis}
@@ -87,7 +93,7 @@ export const SingleGateWorkspace: React.FC = () => {
 
           <div className="card panel-bloch-wrapper">
             <StateSummaryStrip
-              stepData={stepData}
+              stepData={currentStepData}
               selectedQubit={selectedQubit}
               qubitNames={qubitNames}
               viewMode={viewMode}
@@ -96,7 +102,7 @@ export const SingleGateWorkspace: React.FC = () => {
             <BlochPanel
               numQubits={simulationData?.num_qubits || 1}
               qubitNames={qubitNames}
-              stepData={stepData}
+              stepData={currentStepData}
               selectedQubit={selectedQubit}
               viewMode={viewMode}
               onViewModeChange={setViewMode}

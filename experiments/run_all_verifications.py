@@ -18,19 +18,19 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.modules.falfg import build_falfg_clifford_t, build_falfg_ncv
-from src.modules.one_bit_alu import build_one_bit_alu_clifford_t, build_one_bit_alu_ncv
-from src.modules.uncomputation import build_uncomputed_adder_subtractor
-from src.modules.n_bit_alu import build_4bit_alu
-from src.simulation.verifier import (
+from backend.app.modules.falfg import build_falfg_clifford_t, build_falfg_ncv
+from backend.app.modules.one_bit_alu import build_one_bit_alu_clifford_t, build_one_bit_alu_ncv
+from backend.app.modules.uncomputation import build_uncomputed_adder_subtractor
+from backend.app.modules.n_bit_alu import build_4bit_alu
+from backend.app.simulation.verifier import (
     verify_falfg_table4,
     verify_falfg_table5,
     verify_one_bit_alu_table6,
     verify_parity_preservation,
     verify_reversibility,
 )
-from src.simulation.cost_metrics import analyze_circuit_cost, verify_theoretical_formulas
-from src.simulation.fidelity_simulator import run_figure12_reproduction
+from backend.app.simulation.cost_metrics import analyze_circuit_cost, verify_theoretical_formulas
+from backend.app.simulation.fidelity_simulator import run_figure12_reproduction
 
 
 def run_full_paper_verification():

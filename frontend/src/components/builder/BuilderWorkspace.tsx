@@ -78,19 +78,28 @@ export const BuilderWorkspace: React.FC = () => {
     });
   };
 
-  const handlePlaceGate = (qubit: number, step: number) => {
+  const handlePlaceGate = (qubit: number, step: number, targetQubit?: number) => {
     if (!selectedGate) return;
-    const isMulti = ['CX', 'CZ', 'SWAP'].includes(selectedGate);
-    const targetQubit = isMulti ? (qubit + 1 < numQubits ? qubit + 1 : qubit - 1) : qubit;
+    const isMulti = ['CX', 'CY', 'CZ', 'CH', 'CRX', 'CRY', 'CRZ', 'SWAP', 'ISWAP'].includes(selectedGate);
+    const resolvedTarget = isMulti
+      ? targetQubit !== undefined && targetQubit !== qubit
+        ? targetQubit
+        : qubit + 1 < numQubits
+        ? qubit + 1
+        : qubit - 1
+      : qubit;
 
     const newGate: PlacedGate = {
       id: Math.random().toString(36).substring(2, 9),
       name: selectedGate,
-      qubits: isMulti ? [qubit, targetQubit] : [qubit],
+      qubits: isMulti ? [qubit, resolvedTarget] : [qubit],
       step,
     };
 
-    setPlacedGates((prev) => [...prev.filter((g) => !(g.qubits.includes(qubit) && g.step === step)), newGate]);
+    setPlacedGates((prev) => [
+      ...prev.filter((g) => !(g.qubits.includes(qubit) && g.step === step)),
+      newGate,
+    ]);
   };
 
   const handleRemoveGate = (gateId: string) => {

@@ -9,8 +9,8 @@ control copy gates as presented in Section IV.D and Figure 10 of:
 
 from typing import List, Dict, Any, Tuple
 from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
-from app.modules.one_bit_alu import build_one_bit_alu_clifford_t, build_one_bit_alu_ncv
-from app.gates.basic_gates import add_fredkin_clifford_t, add_f2g, add_feynman
+from backend.app.modules.one_bit_alu import build_one_bit_alu_clifford_t, build_one_bit_alu_ncv
+from backend.app.gates.basic_gates import add_fredkin_clifford_t, add_f2g, add_feynman
 
 
 def calculate_n_bit_theoretical_metrics(n: int) -> Dict[str, int]:
