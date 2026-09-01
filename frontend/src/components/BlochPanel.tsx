@@ -98,32 +98,55 @@ function buildFocusSphere(rad: number): THREE.Group {
   return g;
 }
 
-/** Minimal clean sphere for Circuit Builder grid view — just rings, no axis lines or labels */
+/** Minimal clean sphere for Circuit Builder grid view — uniform, elegant translucent look */
 function buildGridSphere(rad: number, isSelected: boolean): THREE.Group {
   const g = new THREE.Group();
   const seg = 48;
 
-  // Translucent shell
+  // Translucent shell - uniform across all qubits
   g.add(new THREE.Mesh(
-    new THREE.SphereGeometry(rad, 24, 18),
+    new THREE.SphereGeometry(rad, 32, 24),
     new THREE.MeshPhongMaterial({
-      color: isSelected ? 0x0284c7 : 0x1e3a5f,
-      transparent: true, opacity: isSelected ? 0.18 : 0.10,
-      shininess: 50, specular: isSelected ? 0x38bdf8 : 0x334155, depthWrite: false
+      color: 0x0284c7,
+      transparent: true,
+      opacity: 0.14,
+      shininess: 60,
+      specular: 0x38bdf8,
+      depthWrite: false
     })
   ));
 
-  // Equator ring only
+  // Equator ring
   const eq: THREE.Vector3[] = [];
-  for (let i = 0; i <= seg; i++) { const a = (i/seg)*Math.PI*2; eq.push(new THREE.Vector3(Math.cos(a)*rad,0,Math.sin(a)*rad)); }
-  g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(eq),
-    new THREE.LineBasicMaterial({ color: isSelected ? 0x38bdf8 : 0x475569, transparent: true, opacity: isSelected ? 0.55 : 0.30 })));
+  for (let i = 0; i <= seg; i++) {
+    const a = (i / seg) * Math.PI * 2;
+    eq.push(new THREE.Vector3(Math.cos(a) * rad, 0, Math.sin(a) * rad));
+  }
+  g.add(new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(eq),
+    new THREE.LineBasicMaterial({
+      color: 0x38bdf8,
+      transparent: true,
+      opacity: 0.45,
+    })
+  ));
 
-  // One subtle meridian ring
+  // Meridian ring (dashed)
   const me: THREE.Vector3[] = [];
-  for (let i = 0; i <= seg; i++) { const a = (i/seg)*Math.PI*2; me.push(new THREE.Vector3(Math.cos(a)*rad,Math.sin(a)*rad,0)); }
-  const ml = new THREE.Line(new THREE.BufferGeometry().setFromPoints(me),
-    new THREE.LineDashedMaterial({ color: 0x334155, transparent: true, opacity: 0.25, dashSize: 0.06, gapSize: 0.04 }));
+  for (let i = 0; i <= seg; i++) {
+    const a = (i / seg) * Math.PI * 2;
+    me.push(new THREE.Vector3(Math.cos(a) * rad, Math.sin(a) * rad, 0));
+  }
+  const ml = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(me),
+    new THREE.LineDashedMaterial({
+      color: 0x334155,
+      transparent: true,
+      opacity: 0.35,
+      dashSize: 0.06,
+      gapSize: 0.04
+    })
+  );
   ml.computeLineDistances();
   g.add(ml);
 
@@ -168,9 +191,9 @@ export const BlochPanel: React.FC<BlochPanelProps> = ({
     controls.enableDamping = true; controls.dampingFactor = 0.05;
     controlsRef.current = controls;
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-    const key = new THREE.DirectionalLight(0xffffff, 1.2); key.position.set(5,10,7); scene.add(key);
-    const rim = new THREE.DirectionalLight(0x38bdf8,  0.7); rim.position.set(-5,-5,-5); scene.add(rim);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+    const key = new THREE.DirectionalLight(0xffffff, 0.9); key.position.set(0, 10, 10); scene.add(key);
+    const rim = new THREE.DirectionalLight(0x38bdf8,  0.5); rim.position.set(0, -5, 5); scene.add(rim);
 
     let id: number;
     const loop = () => {
