@@ -17,6 +17,12 @@ class CustomCircuitRequest(BaseModel):
     circuit_name: Optional[str] = "User Custom Circuit"
 
 
+class SingleGateRequest(BaseModel):
+    gate_name: str = Field(..., description="Name of the gate to simulate (e.g. H, X, T, CX, RX)")
+    input_bits: List[int] = Field(..., description="Initial computational basis bits")
+    params: Optional[List[float]] = Field(None, description="Optional parameters for parametric gates (e.g. theta)")
+
+
 class SimulationRequest(BaseModel):
     architecture: str = Field(..., description="Architecture name (e.g. 1-bit-alu, falfg-gate, fredkin-gate, bennett-adder)")
     synthesis: str = Field("clifford_t", description="Synthesis library (clifford_t, ncv)")

@@ -1,32 +1,5 @@
-import React from 'react';
-
-export interface GatePaletteItem {
-  name: string;
-  category: 'basic' | 'phase' | 'multi' | 'parametric';
-  numQubits: number;
-  label: string;
-  description: string;
-}
-
-export const GATE_PALETTE: GatePaletteItem[] = [
-  { name: 'H', category: 'basic', numQubits: 1, label: 'H', description: 'Hadamard (Superposition)' },
-  { name: 'X', category: 'basic', numQubits: 1, label: 'X', description: 'Pauli-X (NOT)' },
-  { name: 'Y', category: 'basic', numQubits: 1, label: 'Y', description: 'Pauli-Y' },
-  { name: 'Z', category: 'basic', numQubits: 1, label: 'Z', description: 'Pauli-Z (Phase Flip)' },
-  
-  { name: 'S', category: 'phase', numQubits: 1, label: 'S', description: 'Phase (π/2)' },
-  { name: 'SDG', category: 'phase', numQubits: 1, label: 'S†', description: 'S-Dagger (-π/2)' },
-  { name: 'T', category: 'phase', numQubits: 1, label: 'T', description: 'T Gate (π/4)' },
-  { name: 'TDG', category: 'phase', numQubits: 1, label: 'T†', description: 'T-Dagger (-π/4)' },
-  
-  { name: 'CX', category: 'multi', numQubits: 2, label: 'CNOT', description: 'Controlled-NOT' },
-  { name: 'CZ', category: 'multi', numQubits: 2, label: 'CZ', description: 'Controlled-Z' },
-  { name: 'SWAP', category: 'multi', numQubits: 2, label: 'SWAP', description: 'Swap Qubits' },
-  
-  { name: 'RX', category: 'parametric', numQubits: 1, label: 'RX(θ)', description: 'X Rotation' },
-  { name: 'RY', category: 'parametric', numQubits: 1, label: 'RY(θ)', description: 'Y Rotation' },
-  { name: 'RZ', category: 'parametric', numQubits: 1, label: 'RZ(θ)', description: 'Z Rotation' },
-];
+import React, { useState } from 'react';
+import { GATE_REGISTRY, GateDefinition } from '../../services/gateRegistry';
 
 interface GatePaletteProps {
   selectedGate: string | null;
@@ -37,42 +10,86 @@ export const GatePalette: React.FC<GatePaletteProps> = ({
   selectedGate,
   onSelectGate,
 }) => {
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [hoveredGate, setHoveredGate] = useState<GateDefinition | null>(null);
+
+  const filteredGates = GATE_REGISTRY.filter((g) => {
+    const q = searchQuery.toLowerCase();
+    return (
+      g.name.toLowerCase().includes(q) ||
+      g.label.toLowerCase().includes(q) ||
+      g.description.toLowerCase().includes(q) ||
+      g.category.toLowerCase().includes(q)
+    );
+  });
+
   const categories = [
     { id: 'basic', title: 'Basic Gates' },
     { id: 'phase', title: 'Phase & Clifford+T' },
-    { id: 'multi', title: 'Multi-Qubit Gates' },
-    { id: 'parametric', title: 'Parametric Rotations' },
+    { id: 'rotation', title: 'Parametric Rotations' },
+    { id: 'controlled', title: 'Controlled Gates' },
+    { id: 'multi', title: 'Multi-Qubit / Reversible' },
+    { id: 'measurement', title: 'Measurement & Reset' },
   ] as const;
 
   return (
     <aside className="builder-palette">
       <div className="palette-header">
         <h4>🎨 Gate Palette</h4>
-        <span className="subtitle">Click gate to place on wire</span>
+        <span className="subtitle">Select gate to place on circuit wire</span>
+      </div>
+
+      <div className="palette-search">
+        <input
+          type="text"
+          placeholder="🔍 Search gates (e.g. H, CX, rot)..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="search-input"
+        />
       </div>
 
       <div className="palette-categories">
-        {categories.map((cat) => (
-          <div key={cat.id} className="palette-group">
-            <h5>{cat.title}</h5>
-            <div className="gate-buttons-grid">
-              {GATE_PALETTE.filter((g) => g.category === cat.id).map((gate) => {
-                const isSelected = selectedGate === gate.name;
-                return (
-                  <button
-                    key={gate.name}
-                    className={`palette-gate-btn ${isSelected ? 'selected' : ''}`}
-                    title={gate.description}
-                    onClick={() => onSelectGate(isSelected ? null : gate.name)}
-                  >
-                    <span className="gate-name">{gate.label}</span>
-                  </button>
-                );
-              })}
+        {categories.map((cat) => {
+          const gatesInCat = filteredGates.filter((g) => g.category === cat.id);
+          if (gatesInCat.length === 0) return null;
+
+          return (
+            <div key={cat.id} className="palette-group">
+              <h5>{cat.title}</h5>
+              <div className="gate-buttons-grid">
+                {gatesInCat.map((gate) => {
+                  const isSelected = selectedGate === gate.name;
+                  return (
+                    <button
+                      key={gate.id}
+                      className={`palette-gate-btn ${isSelected ? 'selected' : ''}`}
+                      title={`${gate.description} (${gate.numQubits}Q)`}
+                      onClick={() => onSelectGate(isSelected ? null : gate.name)}
+                      onMouseEnter={() => setHoveredGate(gate)}
+                      onMouseLeave={() => setHoveredGate(null)}
+                    >
+                      <span className="gate-name">{gate.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
+
+      {hoveredGate && (
+        <div className="gate-hover-inspector">
+          <div className="gate-hover-title">
+            <b>{hoveredGate.name}</b> — {hoveredGate.description}
+          </div>
+          <p className="gate-hover-phys">{hoveredGate.physicalExplanation}</p>
+          {hoveredGate.matrixHtml && (
+            <pre className="gate-hover-matrix">{hoveredGate.matrixHtml}</pre>
+          )}
+        </div>
+      )}
     </aside>
   );
 };

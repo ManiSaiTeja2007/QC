@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { SimulationStep, BlochVector } from '../types/simulation';
+import { QSpherePanel } from './QSpherePanel';
 
 interface StatePanelProps {
   stepData: SimulationStep | null;
@@ -28,6 +29,8 @@ export const StatePanel: React.FC<StatePanelProps> = ({
   measurementBasis,
   onBasisChange,
 }) => {
+  const [activeTab, setActiveTab] = useState<'probabilities' | 'qsphere'>('probabilities');
+
   const diracKet = stepData?.psi_ket || '|0⟩';
   const gateObj = stepData?.gate;
   const gateKey = gateObj ? gateObj.name.toUpperCase() : 'INIT';
@@ -82,40 +85,64 @@ export const StatePanel: React.FC<StatePanelProps> = ({
   return (
     <article className="card panel-state">
       <div className="card-header">
-        <h3>⚛️ Quantum Statevector & Measurement</h3>
-        <div className="basis-selector">
-          <label>Basis:</label>
-          {(['Z', 'X', 'Y'] as const).map((b) => (
-            <button
-              key={b}
-              className={`btn-xs ${measurementBasis === b ? 'active' : ''}`}
-              onClick={() => onBasisChange(b)}
-            >
-              {b}-Basis
-            </button>
-          ))}
+        <div className="tab-buttons">
+          <button
+            className={`tab-btn ${activeTab === 'probabilities' ? 'active' : ''}`}
+            onClick={() => setActiveTab('probabilities')}
+          >
+            📊 Statevector
+          </button>
+          <button
+            className={`tab-btn ${activeTab === 'qsphere' ? 'active' : ''}`}
+            onClick={() => setActiveTab('qsphere')}
+          >
+            🌐 3D Q-Sphere
+          </button>
         </div>
+
+        {activeTab === 'probabilities' && (
+          <div className="basis-selector">
+            <label>Basis:</label>
+            {(['Z', 'X', 'Y'] as const).map((b) => (
+              <button
+                key={b}
+                className={`btn-xs ${measurementBasis === b ? 'active' : ''}`}
+                onClick={() => onBasisChange(b)}
+              >
+                {b}-Basis
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      <div className="state-container">
-        <div className="dirac-box">
-          <span className="psi-lbl">|ψ⟩ = </span>
-          <span className="dirac-formula">{diracKet}</span>
-        </div>
+      {activeTab === 'qsphere' ? (
+        <QSpherePanel
+          stepData={stepData}
+          numQubits={stepData?.bloch_vectors.length || 3}
+        />
+      ) : (
+        <div className="state-container">
+          <div className="ket-box">
+            <span className="ket-title">Dirac Ket |ψ⟩ Statevector</span>
+            <div className="ket-formula" title={diracKet}>
+              {diracKet}
+            </div>
+          </div>
 
-        <div className="prob-box">
-          <h4>State Probability Distribution ({measurementBasis}-Basis)</h4>
-          <div className="prob-bars-grid">{renderBars()}</div>
-        </div>
+          <div className="explanation-box">
+            <span className="ket-title">Gate Action & Physical Meaning</span>
+            <p className="explanation-text" dangerouslySetInnerHTML={{ __html: explanation }} />
+          </div>
 
-        <div className="gate-explanation-box">
-          <h4>Active Gate Physical Transformation</h4>
-          <div
-            className="explanation-text"
-            dangerouslySetInnerHTML={{ __html: explanation }}
-          />
+          <div className="prob-bars-card">
+            <span className="ket-title">
+              {measurementBasis}-Basis Measurement Probabilities
+            </span>
+            <div className="prob-bars-list">{renderBars()}</div>
+          </div>
         </div>
-      </div>
+      )}
     </article>
   );
 };

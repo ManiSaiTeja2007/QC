@@ -42,3 +42,23 @@ export async function fetchCustomSimulationData(payload: CustomCircuitPayload): 
 
   return response.json();
 }
+
+export interface SingleGatePayload {
+  gate_name: string;
+  input_bits: number[];
+  params?: number[];
+}
+
+export async function fetchSingleGateSimulationData(payload: SingleGatePayload): Promise<SimulationPayload> {
+  const response = await fetch(`${API_BASE}/simulate-single-gate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Single Gate Simulation API error: ${response.statusText}`);
+  }
+
+  return response.json();
+}

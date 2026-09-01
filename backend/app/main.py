@@ -13,7 +13,7 @@ BACKEND_DIR = Path(__file__).resolve().parent.parent
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
-from app.schemas.simulation import SimulationRequest, CustomCircuitRequest
+from app.schemas.simulation import SimulationRequest, CustomCircuitRequest, SingleGateRequest
 from app.gates.basic_gates import build_fredkin_circuit
 from app.modules.falfg import build_falfg_clifford_t, build_falfg_ncv
 from app.modules.one_bit_alu import (
@@ -90,14 +90,14 @@ def simulate_circuit(req: SimulationRequest):
     else:
         raise HTTPException(status_code=400, detail=f"Unknown architecture: {req.architecture}")
 
-    if len(req.input_bits) != qc.num_qubits:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Architecture '{arch}' requires exactly {qc.num_qubits} input bits, got {len(req.input_bits)}"
-        )
+    # Gracefully adjust input_bits length to match architecture qubit count
+    if len(req.input_bits) < qc.num_qubits:
+        input_bits = req.input_bits + [0] * (qc.num_qubits - len(req.input_bits))
+    else:
+        input_bits = req.input_bits[:qc.num_qubits]
 
     # 1. Execute Canonical IR Dual-Level Step Store Simulation
-    ir_payload = build_canonical_circuit_ir(qc, req.input_bits)
+    ir_payload = build_canonical_circuit_ir(qc, input_bits)
 
     # 2. Analyze Cost Metrics
     metrics = analyze_circuit_cost(qc)
@@ -114,11 +114,10 @@ def simulate_custom_circuit(req: CustomCircuitRequest):
     """Executes Canonical Quantum IR simulation for user-built custom circuits from the Circuit Builder."""
     from qiskit import QuantumCircuit
     n_qubits = req.num_qubits
-    if len(req.input_bits) != n_qubits:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Expected {n_qubits} input bits, got {len(req.input_bits)}"
-        )
+    if len(req.input_bits) < n_qubits:
+        input_bits = req.input_bits + [0] * (n_qubits - len(req.input_bits))
+    else:
+        input_bits = req.input_bits[:n_qubits]
 
     qc = QuantumCircuit(n_qubits, name=req.circuit_name or "User Custom Circuit")
 
@@ -157,10 +156,90 @@ def simulate_custom_circuit(req: CustomCircuitRequest):
             qc.rz(params[0], q[0])
 
     qubit_names = [f"Q{i}" for i in range(n_qubits)]
-    ir_payload = build_canonical_circuit_ir(qc, req.input_bits)
+    ir_payload = build_canonical_circuit_ir(qc, input_bits)
     metrics = analyze_circuit_cost(qc)
 
     ir_payload["circuit_name"] = req.circuit_name or "User Custom Circuit"
+    ir_payload["qubit_names"] = qubit_names
+    ir_payload["metrics"] = metrics
+
+    return ir_payload
+
+
+@app.post("/api/simulate-single-gate")
+def simulate_single_gate(req: SingleGateRequest):
+    """Executes standalone 2-step simulation for an individual quantum gate."""
+    from qiskit import QuantumCircuit
+    import numpy as np
+    name = req.gate_name.upper()
+
+    # Determine qubit count based on gate type
+    if name in ["CX", "CY", "CZ", "CH", "CRX", "CRY", "CRZ", "SWAP", "ISWAP"]:
+        n_qubits = 2
+    elif name in ["CCX", "CSWAP"]:
+        n_qubits = 3
+    else:
+        n_qubits = 1
+
+    input_bits = (req.input_bits + [0] * n_qubits)[:n_qubits]
+    params = req.params or [np.pi / 2]
+
+    qc = QuantumCircuit(n_qubits, name=f"Single Gate Laboratory: {name}")
+
+    if name == "H":
+        qc.h(0)
+    elif name == "X":
+        qc.x(0)
+    elif name == "Y":
+        qc.y(0)
+    elif name == "Z":
+        qc.z(0)
+    elif name == "S":
+        qc.s(0)
+    elif name == "SDG":
+        qc.sdg(0)
+    elif name == "T":
+        qc.t(0)
+    elif name == "TDG":
+        qc.tdg(0)
+    elif name in ["P", "PHASE"]:
+        qc.p(params[0], 0)
+    elif name == "RX":
+        qc.rx(params[0], 0)
+    elif name == "RY":
+        qc.ry(params[0], 0)
+    elif name == "RZ":
+        qc.rz(params[0], 0)
+    elif name == "CX" and n_qubits >= 2:
+        qc.cx(0, 1)
+    elif name == "CY" and n_qubits >= 2:
+        qc.cy(0, 1)
+    elif name == "CZ" and n_qubits >= 2:
+        qc.cz(0, 1)
+    elif name == "CH" and n_qubits >= 2:
+        qc.ch(0, 1)
+    elif name == "CRX" and n_qubits >= 2:
+        qc.crx(params[0], 0, 1)
+    elif name == "CRY" and n_qubits >= 2:
+        qc.cry(params[0], 0, 1)
+    elif name == "CRZ" and n_qubits >= 2:
+        qc.crz(params[0], 0, 1)
+    elif name == "SWAP" and n_qubits >= 2:
+        qc.swap(0, 1)
+    elif name == "ISWAP" and n_qubits >= 2:
+        qc.iswap(0, 1)
+    elif name == "CCX" and n_qubits >= 3:
+        qc.ccx(0, 1, 2)
+    elif name == "CSWAP" and n_qubits >= 3:
+        qc.cswap(0, 1, 2)
+    else:
+        qc.h(0)
+
+    qubit_names = [f"Q{i}" for i in range(n_qubits)]
+    ir_payload = build_canonical_circuit_ir(qc, input_bits)
+    metrics = analyze_circuit_cost(qc)
+
+    ir_payload["circuit_name"] = f"Individual Gate Simulation: {name}"
     ir_payload["qubit_names"] = qubit_names
     ir_payload["metrics"] = metrics
 

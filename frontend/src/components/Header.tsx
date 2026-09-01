@@ -1,11 +1,12 @@
 import React from 'react';
+import { StudioMode } from '../types/mode';
 
 interface HeaderProps {
-  appMode: 'builder' | 'simulation';
+  appMode: StudioMode;
   architecture: string;
   synthesis: string;
   preset: string;
-  onModeChange: (mode: 'builder' | 'simulation') => void;
+  onModeChange: (mode: StudioMode) => void;
   onArchChange: (arch: string) => void;
   onSynthChange: (synth: string) => void;
   onPresetChange: (preset: string) => void;
@@ -42,14 +43,20 @@ export const Header: React.FC<HeaderProps> = ({
             🎨 Circuit Builder
           </button>
           <button
-            className={`btn btn-xs ${appMode === 'simulation' ? 'active' : ''}`}
-            onClick={() => onModeChange('simulation')}
+            className={`btn btn-xs ${appMode === 'single-gate-lab' ? 'active' : ''}`}
+            onClick={() => onModeChange('single-gate-lab')}
+          >
+            🔬 Single Gate Lab
+          </button>
+          <button
+            className={`btn btn-xs ${appMode === 'live-simulation' ? 'active' : ''}`}
+            onClick={() => onModeChange('live-simulation')}
           >
             ⚡ Live Simulation
           </button>
         </div>
 
-        {appMode === 'simulation' && (
+        {appMode === 'live-simulation' && (
           <>
             <div className="control-group">
               <label>Architecture</label>
