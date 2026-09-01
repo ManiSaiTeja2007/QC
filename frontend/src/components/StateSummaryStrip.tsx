@@ -5,7 +5,9 @@ interface StateSummaryStripProps {
   stepData: SimulationStep | null;
   selectedQubit: number;
   qubitNames: string[];
-  viewMode: 'all' | 'grid' | 'focus';
+  viewMode?: 'all' | 'grid' | 'focus';
+  displayedQubits?: number[];
+  activeQubits?: number[];
   onSelectQubit: (qIdx: number) => void;
 }
 
@@ -18,7 +20,9 @@ export const StateSummaryStrip: React.FC<StateSummaryStripProps> = ({
   stepData,
   selectedQubit,
   qubitNames,
-  viewMode,
+  viewMode = 'grid',
+  displayedQubits,
+  activeQubits,
   onSelectQubit,
 }) => {
   if (!stepData) return null;
@@ -40,6 +44,13 @@ export const StateSummaryStrip: React.FC<StateSummaryStripProps> = ({
 
   const activeGateQubits = (stepData.gate && Array.isArray(stepData.gate.qubits)) ? stepData.gate.qubits : [];
 
+  const qubitsToRender = (displayedQubits && displayedQubits.length > 0)
+    ? displayedQubits
+    : stepData.bloch_vectors.map((_, i) => i);
+
+  const totalCount = stepData.bloch_vectors.length;
+  const activeCount = activeQubits ? activeQubits.length : activeGateQubits.length;
+
   return (
     <>
       {/* Top Single Selected Qubit Summary */}
@@ -47,6 +58,11 @@ export const StateSummaryStrip: React.FC<StateSummaryStripProps> = ({
         <div className="summary-row-1">
           <b style={{ color: hexColor }}>{qName}</b>
           <span className="badge-tag">{stateType}</span>
+          {activeQubits && (
+            <span className="qubits-active-ratio-tag">
+              {activeCount} Active / {totalCount} Total
+            </span>
+          )}
         </div>
         <div className="summary-row-2">
           <span>
@@ -63,12 +79,14 @@ export const StateSummaryStrip: React.FC<StateSummaryStripProps> = ({
         </div>
       </div>
 
-      {/* Multi-Qubit Results Strip (Shown in All & Grid modes) */}
-      {viewMode !== 'focus' && (
+      {/* Multi-Qubit Results Strip */}
+      {viewMode !== 'focus' && qubitsToRender.length > 1 && (
         <div className="all-qubits-summary-strip">
-          {stepData.bloch_vectors.map((vec, i) => {
+          {qubitsToRender.map((i) => {
+            const vec = stepData.bloch_vectors[i];
+            if (!vec) return null;
             const isSel = i === selectedQubit;
-            const isActiveGate = activeGateQubits.includes(i);
+            const isActive = activeQubits ? activeQubits.includes(i) : activeGateQubits.includes(i);
             const name = qubitNames[i] ? qubitNames[i].split(' ')[0] : `Q${i}`;
             const color = QUBIT_COLORS[i % QUBIT_COLORS.length];
 
@@ -81,7 +99,7 @@ export const StateSummaryStrip: React.FC<StateSummaryStripProps> = ({
             return (
               <div
                 key={i}
-                className={`q-summary-card ${isSel ? 'selected' : ''} ${isActiveGate ? 'active-gate' : ''}`}
+                className={`q-summary-card ${isSel ? 'selected' : ''} ${isActive ? 'active-gate' : ''}`}
                 onClick={() => onSelectQubit(i)}
               >
                 <div className="q-card-header">

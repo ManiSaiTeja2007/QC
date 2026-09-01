@@ -1,8 +1,9 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// Vite Dev Server config with API proxying to FastAPI backend on port 8000
+// Vite Dev Server config with Base Path and API proxying to FastAPI backend on port 8000
 export default defineConfig({
+  base: '/',
   plugins: [react()],
   server: {
     port: 5173,

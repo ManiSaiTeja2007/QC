@@ -33,6 +33,7 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
 }) => {
   const [selectedGateId, setSelectedGateId] = useState<string | null>(null);
   const [customTargetQubit, setCustomTargetQubit] = useState<number>(1);
+  const [dragOverCell, setDragOverCell] = useState<{ q: number; col: number } | null>(null);
 
   const maxStep = Math.max(14, ...placedGates.map((g) => g.step + 2));
   const columns = Array.from({ length: maxStep }, (_, i) => i + 1);
@@ -59,8 +60,20 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
 
   const handleCellClick = (q: number, col: number) => {
     if (!selectedGate) return;
-    const isMulti = ['CX', 'CY', 'CZ', 'CH', 'CRX', 'CRY', 'CRZ', 'SWAP', 'ISWAP'].includes(selectedGate);
+    const isMulti = ['CX', 'CY', 'CZ', 'CH', 'CRX', 'CRY', 'CRZ', 'SWAP', 'ISWAP', 'CCX', 'CSWAP'].includes(selectedGate);
     const targetQ = isMulti ? customTargetQubit : q;
+    onPlaceGate(q, col, targetQ);
+  };
+
+  const handleDropGate = (gateName: string, q: number, col: number) => {
+    const isMulti = ['CX', 'CY', 'CZ', 'CH', 'CRX', 'CRY', 'CRZ', 'SWAP', 'ISWAP', 'CCX', 'CSWAP'].includes(gateName);
+    const targetQ = isMulti
+      ? customTargetQubit !== q
+        ? customTargetQubit
+        : q + 1 < numQubits
+        ? q + 1
+        : q - 1
+      : q;
     onPlaceGate(q, col, targetQ);
   };
 
@@ -190,16 +203,45 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
             const wireY = startY + q * rowHeight + rowHeight / 2;
             return columns.map((col) => {
               const colX = startX + (col - 1) * colWidth + colWidth / 2;
+              const isDragHover = dragOverCell?.q === q && dragOverCell?.col === col;
+
               return (
-                <rect
-                  key={`${q}-${col}`}
-                  x={colX - 16}
-                  y={wireY - 14}
-                  width={32}
-                  height={28}
-                  className={`builder-cell ${selectedGate ? 'droppable' : ''}`}
-                  onClick={() => handleCellClick(q, col)}
-                />
+                <g key={`${q}-${col}`}>
+                  <rect
+                    x={colX - 16}
+                    y={wireY - 14}
+                    width={32}
+                    height={28}
+                    className={`builder-cell ${selectedGate ? 'droppable' : ''} ${isDragHover ? 'drag-hover' : ''}`}
+                    onClick={() => handleCellClick(q, col)}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'copy';
+                      setDragOverCell({ q, col });
+                    }}
+                    onDragLeave={() => {
+                      setDragOverCell((prev) => (prev?.q === q && prev?.col === col ? null : prev));
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setDragOverCell(null);
+                      const gateName = e.dataTransfer.getData('text/plain') || selectedGate;
+                      if (gateName) {
+                        handleDropGate(gateName, q, col);
+                      }
+                    }}
+                  />
+                  {isDragHover && (
+                    <rect
+                      x={colX - 14}
+                      y={wireY - 14}
+                      width={28}
+                      height={28}
+                      rx={4}
+                      className="builder-drag-ghost"
+                    />
+                  )}
+                </g>
               );
             });
           })}
@@ -216,13 +258,21 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
               return (
                 <g
                   key={g.id}
+                  {...({
+                    draggable: true,
+                    onDragStart: (e: React.DragEvent) => {
+                      e.dataTransfer.setData('text/plain', g.name);
+                      e.dataTransfer.effectAllowed = 'move';
+                      onRemoveGate(g.id);
+                    },
+                  } as any)}
                   onClick={(e) => {
                     e.stopPropagation();
                     setSelectedGateId(isSelected ? null : g.id);
                   }}
-                  style={{ cursor: 'pointer' }}
+                  style={{ cursor: 'grab' }}
                 >
-                  <title>{`${g.name} (Control: Q${g.qubits[0]}, Target: Q${g.qubits[1]}) — Click to select/delete`}</title>
+                  <title>{`${g.name} (Control: Q${g.qubits[0]}, Target: Q${g.qubits[1]}) — Click to select/delete, drag to move`}</title>
                   <line
                     x1={colX}
                     y1={cY}
@@ -255,13 +305,21 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
             return (
               <g
                 key={g.id}
+                {...({
+                  draggable: true,
+                  onDragStart: (e: React.DragEvent) => {
+                    e.dataTransfer.setData('text/plain', g.name);
+                    e.dataTransfer.effectAllowed = 'move';
+                    onRemoveGate(g.id);
+                  },
+                } as any)}
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedGateId(isSelected ? null : g.id);
                 }}
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: 'grab' }}
               >
-                <title>{`${g.name} on Q${g.qubits[0]} — Click to select/delete`}</title>
+                <title>{`${g.name} on Q${g.qubits[0]} — Click to select/delete, drag to move`}</title>
                 <rect
                   x={colX - boxSize / 2}
                   y={qY - boxSize / 2}

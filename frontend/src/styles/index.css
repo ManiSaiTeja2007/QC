@@ -2166,6 +2166,163 @@ select:hover {
   flex-direction: column;
 }
 
+/* ─── Phase 124–128: Qubit Visibility Popover & Drag & Drop Styles ──────── */
+.gate-drag-indicator {
+  opacity: 0.45;
+  font-size: 0.75rem;
+  margin-right: 4px;
+  cursor: grab;
+  user-select: none;
+}
+
+.palette-gate-btn:hover .gate-drag-indicator {
+  opacity: 0.9;
+  color: #38bdf8;
+}
+
+.builder-cell.drag-hover {
+  stroke: #38bdf8 !important;
+  stroke-width: 2px !important;
+  fill: rgba(56, 189, 248, 0.2) !important;
+}
+
+.builder-drag-ghost {
+  fill: rgba(56, 189, 248, 0.25);
+  stroke: #38bdf8;
+  stroke-width: 1.5px;
+  stroke-dasharray: 4, 3;
+  pointer-events: none;
+  animation: pulseGhost 1.2s infinite ease-in-out;
+}
+
+@keyframes pulseGhost {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.qubits-active-ratio-tag {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 4px;
+  font-size: 0.62rem;
+  font-family: var(--font-mono);
+  padding: 1px 6px;
+  margin-left: 8px;
+}
+
+.qubit-visibility-popover {
+  position: absolute;
+  bottom: 44px;
+  right: 12px;
+  width: 240px;
+  background: #0b1329;
+  border: 1px solid #1e3a5f;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7);
+  border-radius: 8px;
+  padding: 10px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-family: var(--font-sans);
+}
+
+.popover-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  border-bottom: 1px solid #1e293b;
+  padding-bottom: 6px;
+}
+
+.popover-close-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.popover-close-btn:hover {
+  color: #f1f5f9;
+}
+
+.popover-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-popover-sm {
+  flex: 1;
+  background: #172554;
+  color: #93c5fd;
+  border: 1px solid #1e3a8a;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  padding: 3px 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-popover-sm:hover {
+  background: #1e3a8a;
+  color: #ffffff;
+}
+
+.popover-qubit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.popover-qubit-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.72rem;
+  color: #cbd5e1;
+  cursor: pointer;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: #080e1e;
+  border: 1px solid #132238;
+}
+
+.popover-qubit-item:hover {
+  background: #0f1c30;
+}
+
+.popover-q-name {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  flex: 1;
+}
+
+.popover-q-badge {
+  font-size: 0.58rem;
+  font-family: var(--font-mono);
+  padding: 1px 5px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.popover-q-badge.active {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+}
+
+.popover-q-badge.idle {
+  background: rgba(100, 116, 139, 0.2);
+  color: #94a3b8;
+}
+
 
 
 

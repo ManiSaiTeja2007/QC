@@ -64,11 +64,18 @@ export const GatePalette: React.FC<GatePaletteProps> = ({
                     <button
                       key={gate.id}
                       className={`palette-gate-btn ${isSelected ? 'selected' : ''}`}
-                      title={`${gate.description} (${gate.numQubits}Q)`}
+                      title={`${gate.description} (${gate.numQubits}Q) — Drag to place or click`}
+                      draggable={true}
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('text/plain', gate.name);
+                        e.dataTransfer.setData('application/x-qc-gate', JSON.stringify({ name: gate.name, numQubits: gate.numQubits }));
+                        e.dataTransfer.effectAllowed = 'copy';
+                      }}
                       onClick={() => onSelectGate(isSelected ? null : gate.name)}
                       onMouseEnter={() => setHoveredGate(gate)}
                       onMouseLeave={() => setHoveredGate(null)}
                     >
+                      <span className="gate-drag-indicator">⋮⋮</span>
                       <span className="gate-name">{gate.label}</span>
                     </button>
                   );
