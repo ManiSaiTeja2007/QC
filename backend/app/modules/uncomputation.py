@@ -7,8 +7,8 @@ circuit presented in Figure 9 of:
 """
 
 from qiskit import QuantumCircuit
-from src.gates.basic_gates import add_f2g
-from src.modules.falfg import build_falfg_clifford_t
+from app.gates.basic_gates import add_f2g
+from app.modules.falfg import build_falfg_clifford_t
 
 
 def build_uncomputed_adder_subtractor() -> QuantumCircuit:

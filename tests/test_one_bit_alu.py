@@ -1,13 +1,18 @@
+import sys
+from pathlib import Path
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 """Unit tests for 1-Bit Fault-Tolerant Parity-Preserving Quantum ALU."""
 
 import pytest
-from src.modules.one_bit_alu import build_one_bit_alu_clifford_t, build_one_bit_alu_ncv
-from src.simulation.verifier import (
+from backend.app.modules.one_bit_alu import build_one_bit_alu_clifford_t, build_one_bit_alu_ncv
+from backend.app.simulation.verifier import (
     verify_one_bit_alu_table6,
     verify_parity_preservation,
     verify_reversibility,
 )
-from src.gates.clifford_t_library import count_t_gates, calculate_t_depth
+from backend.app.gates.clifford_t_library import count_t_gates, calculate_t_depth
 
 
 def test_one_bit_alu_all_28_functions():

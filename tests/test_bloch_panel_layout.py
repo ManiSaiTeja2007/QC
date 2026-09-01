@@ -16,6 +16,7 @@ from typing import Dict, Any
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
+sys.path.insert(0, str(PROJECT_ROOT / "backend"))
 
 
 def parse_panel_layout_contract(html_content: str) -> Dict[str, Any]:

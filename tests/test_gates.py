@@ -1,10 +1,15 @@
+import sys
+from pathlib import Path
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 """Unit tests for Fundamental Reversible and Clifford+T Gates."""
 
 import pytest
 import numpy as np
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import Operator
-from src.gates.basic_gates import (
+from backend.app.gates.basic_gates import (
     add_cv,
     add_cv_dag,
     add_fredkin_ncv,
@@ -12,7 +17,7 @@ from src.gates.basic_gates import (
     add_f2g,
     build_fredkin_circuit,
 )
-from src.gates.clifford_t_library import count_t_gates, calculate_t_depth, is_clifford_t
+from backend.app.gates.clifford_t_library import count_t_gates, calculate_t_depth, is_clifford_t
 
 
 def test_cv_and_cv_dag_inverse():

@@ -1,0 +1,897 @@
+/* Ultra-Sleek Strict 100vh Zero-Scroll Modular Design System */
+
+:root {
+  --bg-dark: #07090e;
+  --card-bg: rgba(13, 19, 33, 0.85);
+  --card-border: rgba(255, 255, 255, 0.07);
+  --accent-blue: #3b82f6;
+  --accent-cyan: #06b6d4;
+  --accent-emerald: #10b981;
+  --text-main: #f1f5f9;
+  --text-muted: #94a3b8;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  font-size: 13px;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* ─── Compact Top Control Dock ───────────────────────────────────────────── */
+.app-header {
+  background: rgba(13, 19, 33, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--card-border);
+  padding: 6px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand .icon {
+  font-size: 1.3rem;
+}
+
+.brand h1 {
+  font-size: 1.0rem;
+  font-weight: 700;
+  color: #e0f2fe;
+  line-height: 1.1;
+}
+
+.brand .subtitle {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.control-group label {
+  font-size: 0.60rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+select {
+  background: #1e293b;
+  color: #f1f5f9;
+  border: 1px solid #334155;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  outline: none;
+  cursor: pointer;
+}
+
+select:hover {
+  border-color: var(--accent-blue);
+}
+
+.btn {
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-primary {
+  background: #2563eb;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #1d4ed8;
+}
+
+.btn-icon {
+  background: #1e293b;
+  color: #e2e8f0;
+  border: 1px solid #334155;
+  padding: 3px 8px;
+}
+
+.btn-icon:hover {
+  background: #334155;
+}
+
+.btn-play {
+  background: #059669;
+  color: white;
+}
+
+.btn-play:hover {
+  background: #10b981;
+}
+
+.btn-xs {
+  background: #1e293b;
+  color: #cbd5e1;
+  border: 1px solid #334155;
+  padding: 2px 6px;
+  font-size: 0.65rem;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.btn-xs:hover {
+  background: #334155;
+  color: white;
+}
+
+.btn-xs.active {
+  background: #2563eb;
+  color: white;
+  border-color: #60a5fa;
+  box-shadow: 0 0 6px rgba(37, 99, 235, 0.4);
+}
+
+/* ─── Metrics Sub-dock ─────────────────────────────────────────────────── */
+.dock-subbar {
+  background: #0b1120;
+  padding: 3px 14px;
+  border-bottom: 1px solid var(--card-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.72rem;
+  flex-shrink: 0;
+}
+
+.badge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.70rem;
+  font-weight: 700;
+}
+
+.badge.pass {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge.fail {
+  background: rgba(244, 63, 94, 0.15);
+  color: #fb7185;
+  border: 1px solid rgba(244, 63, 94, 0.3);
+}
+
+.metrics-pills {
+  display: flex;
+  gap: 5px;
+}
+
+.pill {
+  background: #172136;
+  border-radius: 4px;
+  padding: 2px 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.70rem;
+  border: 1px solid #283754;
+}
+
+.pill .lbl { color: var(--text-muted); }
+.pill .val { font-weight: 700; color: #38bdf8; }
+
+.qubit-toggles-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toggles-container {
+  display: flex;
+  gap: 4px;
+}
+
+.bit-toggle {
+  background: #1e293b;
+  color: #94a3b8;
+  border: 1px solid #334155;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bit-toggle.active {
+  background: #2563eb;
+  color: white;
+  border-color: #60a5fa;
+}
+
+/* ─── Compact Transport Bar ─────────────────────────────────────────────── */
+.transport-bar {
+  padding: 3px 14px;
+  background: #080d1a;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--card-border);
+  flex-shrink: 0;
+}
+
+.playback-btns {
+  display: flex;
+  gap: 4px;
+}
+
+.scrubber-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.step-label {
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  color: #38bdf8;
+  min-width: 140px;
+  font-weight: 600;
+}
+
+.slider {
+  flex: 1;
+  accent-color: var(--accent-blue);
+  cursor: pointer;
+  height: 4px;
+}
+
+.speed-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.70rem;
+  color: var(--text-muted);
+}
+
+.slider-sm {
+  width: 60px;
+  accent-color: var(--accent-cyan);
+  height: 4px;
+}
+
+/* ─── 100vh Workspace Grid Layout (Zero Page Scroll) ─────────────────────── */
+.workspace-grid {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr 1.25fr;
+  gap: 8px;
+  padding: 8px 12px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+  height: 100%;
+}
+
+.card-header {
+  background: rgba(23, 33, 54, 0.8);
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--card-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.card-header h3 {
+  font-size: 0.80rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.badge-gate {
+  background: #2563eb;
+  color: white;
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+.badge-tag {
+  background: #1e293b;
+  color: #94a3b8;
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+/* ─── Panel 1: SVG Circuit ─────────────────────────────────────────────── */
+.circuit-viewport {
+  padding: 6px;
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: #04060b;
+  position: relative;
+  border-radius: 4px;
+}
+
+.circuit-svg {
+  display: block;
+  user-select: none;
+  font-family: var(--font-mono);
+}
+
+.svg-wire {
+  stroke: #26334d;
+  stroke-width: 1.5;
+}
+
+.svg-wire.selected {
+  stroke: #38bdf8;
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 4px #38bdf8);
+}
+
+.svg-qubit-lbl {
+  font-size: 10px;
+  font-weight: 600;
+  fill: #94a3b8;
+  font-family: var(--font-sans);
+  cursor: pointer;
+}
+
+.svg-qubit-lbl.selected {
+  fill: #38bdf8;
+  font-weight: 700;
+}
+
+.svg-init-state {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  fill: #34d399;
+  font-weight: 600;
+}
+
+.svg-gate-box {
+  fill: #172136;
+  stroke: #3b82f6;
+  stroke-width: 1.2;
+  rx: 4px;
+  cursor: pointer;
+}
+
+.svg-gate-box:hover {
+  fill: #2563eb;
+  stroke: #60a5fa;
+}
+
+.svg-gate-text {
+  font-size: 9px;
+  font-weight: 700;
+  fill: #f8fafc;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+
+.svg-ctrl-dot {
+  fill: #38bdf8;
+  stroke: #0284c7;
+  stroke-width: 1;
+  cursor: pointer;
+}
+
+.svg-target-circle {
+  fill: #080d1a;
+  stroke: #38bdf8;
+  stroke-width: 1.5;
+  cursor: pointer;
+}
+
+.svg-target-plus {
+  stroke: #38bdf8;
+  stroke-width: 1.5;
+}
+
+.svg-ctrl-line {
+  stroke: #38bdf8;
+  stroke-width: 1.5;
+}
+
+.svg-active-cursor-bg {
+  fill: rgba(56, 189, 248, 0.15);
+  stroke: #38bdf8;
+  stroke-width: 1.5;
+  rx: 4px;
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.6));
+}
+
+.svg-active-line {
+  stroke: #38bdf8;
+  stroke-width: 1.5;
+  stroke-dasharray: 3 2;
+}
+
+.svg-step-num {
+  font-size: 9px;
+  fill: #64748b;
+  text-anchor: middle;
+  cursor: pointer;
+}
+
+.svg-step-num.active {
+  fill: #38bdf8;
+  font-weight: 700;
+}
+
+/* ─── Panel 2: Quantum State |ψ⟩ & Gate Explanation ─────────────────────── */
+.state-container {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.dirac-box {
+  background: #04060b;
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 6px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.psi-lbl {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+.dirac-formula {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #34d399;
+  word-break: break-all;
+}
+
+.prob-box h4, .gate-explanation-box h4 {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.prob-bars-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.prob-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.70rem;
+}
+
+.prob-state-lbl {
+  font-family: var(--font-mono);
+  width: 60px;
+  color: #e2e8f0;
+}
+
+.prob-bar-wrapper {
+  flex: 1;
+  background: #172136;
+  height: 12px;
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.prob-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6 0%, #10b981 100%);
+  border-radius: 3px;
+}
+
+.prob-val-text {
+  width: 40px;
+  text-align: right;
+  font-family: var(--font-mono);
+  color: #94a3b8;
+}
+
+.gate-explanation-box {
+  background: #0b1120;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 0.70rem;
+}
+
+.explanation-text {
+  color: #cbd5e1;
+  line-height: 1.3;
+}
+
+/* ─── Panel 3: 3D WebGL Bloch Studio ─────────────────────────────────────── */
+.bloch-state-summary {
+  background: #0b1120;
+  border-bottom: 1px solid var(--card-border);
+  padding: 4px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.70rem;
+  flex-shrink: 0;
+}
+
+.summary-row-1 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.summary-row-1 b {
+  font-size: 0.78rem;
+  color: #38bdf8;
+}
+
+.summary-row-2 {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  font-size: 0.65rem;
+}
+
+.summary-row-2 span span {
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+.all-qubits-summary-strip {
+  background: #04060b;
+  border-bottom: 1px solid var(--card-border);
+  padding: 4px 8px;
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.q-summary-card {
+  background: #0b1120;
+  border: 1px solid #1e293b;
+  border-radius: 4px;
+  padding: 3px 6px;
+  min-width: 88px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  transition: all 0.15s ease;
+}
+
+.q-summary-card:hover {
+  border-color: #3b82f6;
+  background: #172136;
+}
+
+.q-summary-card.selected {
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.3);
+}
+
+.q-summary-card.active-gate {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.q-card-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+}
+
+.q-card-state {
+  color: #34d399;
+  font-weight: 600;
+}
+
+.q-card-z {
+  color: #94a3b8;
+  font-size: 0.62rem;
+}
+
+.bloch-canvas-box {
+  width: 100%;
+  flex: 1;
+  background: #030509;
+  position: relative;
+  min-height: 0;
+}
+
+.bloch-canvas-box canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+.cam-btn-group, .basis-selector, .view-mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* ─── Circuit Builder Mode Layout ─────────────────────────────────────────── */
+.builder-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 8px;
+  padding: 8px 12px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.builder-palette {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.palette-header h4 {
+  font-size: 0.85rem;
+  color: #e2e8f0;
+}
+
+.palette-header .subtitle {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+.palette-group h5 {
+  font-size: 0.70rem;
+  color: #94a3b8;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.gate-buttons-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.palette-gate-btn {
+  background: #172136;
+  border: 1px solid #283754;
+  border-radius: 4px;
+  padding: 6px 2px;
+  color: #e2e8f0;
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.palette-gate-btn:hover {
+  background: #2563eb;
+  border-color: #60a5fa;
+  color: white;
+
+}
+
+.palette-gate-btn.selected {
+  background: #2563eb;
+  border-color: #93c5fd;
+  color: white;
+
+}
+
+.builder-canvas-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+}
+
+.canvas-toolbar {
+  background: rgba(23, 33, 54, 0.8);
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--card-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+}
+
+.wire-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qubits-count {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+
+}
+
+.canvas-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.active-placement-badge {
+  font-size: 0.72rem;
+  color: #38bdf8;
+}
+
+.canvas-viewport {
+  flex: 1;
+  padding: 10px;
+  background: #04060b;
+  overflow: auto;
+
+}
+
+.builder-svg {
+  display: block;
+  user-select: none;
+  font-family: var(--font-mono);
+}
+
+.builder-col-lbl {
+  font-size: 9px;
+  fill: #64748b;
+  text-anchor: middle;
+}
+
+.builder-q-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  fill: #94a3b8;
+  font-family: var(--font-sans);
+}
+
+.builder-init-val {
+  font-size: 9px;
+  font-weight: 700;
+  fill: #e2e8f0;
+}
+
+.builder-wire {
+  stroke: #26334d;
+  stroke-width: 1.5;
+}
+
+.builder-cell {
+  fill: transparent;
+  stroke: transparent;
+  cursor: pointer;
+  rx: 4px;
+}
+
+.builder-cell.droppable:hover {
+  fill: rgba(56, 189, 248, 0.15);
+  stroke: #38bdf8;
+  stroke-dasharray: 2 2;
+}
+
+.builder-gate-box {
+  fill: #1e293b;
+  stroke: #3b82f6;
+  stroke-width: 1.5;
+  rx: 4px;
+}
+
+.builder-gate-box:hover {
+  fill: #ef4444;
+  stroke: #fca5a5;
+}
+
+.builder-gate-lbl {
+  font-size: 9px;
+  font-weight: 700;
+  fill: white;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+
+.builder-multi-line {
+  stroke: #38bdf8;
+  stroke-width: 2;
+}
+
+.builder-ctrl-dot {
+  fill: #38bdf8;
+  stroke: #0284c7;
+  stroke-width: 1;
+}
+
+.builder-target-circle {
+  fill: #080d1a;
+  stroke: #38bdf8;
+  stroke-width: 2;
+}
+
+.builder-target-cross {
+  stroke: #38bdf8;
+  stroke-width: 2;
+}
+

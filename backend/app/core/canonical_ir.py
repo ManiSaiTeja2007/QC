@@ -277,7 +277,7 @@ def build_canonical_circuit_ir(
 
 def verify_ir_correctness():
     """Runs independent mathematical verification of Canonical IR and unitary step fidelity."""
-    from src.modules.one_bit_alu import build_one_bit_alu_clifford_t
+    from app.modules.one_bit_alu import build_one_bit_alu_clifford_t
     qc = build_one_bit_alu_clifford_t()
     ir = build_canonical_circuit_ir(qc, [1, 1, 1, 0, 1, 1, 0])
     

@@ -11,6 +11,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
+sys.path.insert(0, str(PROJECT_ROOT / "backend"))
 
 
 def test_streamlit_config():
@@ -28,7 +29,7 @@ def test_dev_sh_script():
 
     content = sh_path.read_text(encoding="utf-8")
     assert "--reload" in content, "--reload missing in dev.sh uvicorn command!"
-    assert "streamlit run" in content, "streamlit run missing in dev.sh!"
+    assert "npm run dev" in content or "vite" in content, "npm run dev / vite launcher missing in dev.sh!"
 
 
 if __name__ == "__main__":

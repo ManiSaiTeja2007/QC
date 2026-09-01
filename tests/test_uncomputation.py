@@ -1,10 +1,15 @@
+import sys
+from pathlib import Path
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 """Unit tests for Garbage-Free Bennett's Uncomputed Adder/Subtractor."""
 
 import pytest
 from qiskit import QuantumCircuit
 from qiskit_aer import AerSimulator
 import numpy as np
-from src.modules.uncomputation import build_uncomputed_adder_subtractor
+from backend.app.modules.uncomputation import build_uncomputed_adder_subtractor
 
 
 def test_uncomputed_adder_subtractor_restoration():

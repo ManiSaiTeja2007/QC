@@ -1,14 +1,19 @@
+import sys
+from pathlib import Path
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 """Unit tests for the 5x5 FALFG Gate (Full Adder/Subtractor & Function Generator)."""
 
 import pytest
-from src.modules.falfg import build_falfg_clifford_t, build_falfg_ncv
-from src.simulation.verifier import (
+from backend.app.modules.falfg import build_falfg_clifford_t, build_falfg_ncv
+from backend.app.simulation.verifier import (
     verify_falfg_table4,
     verify_falfg_table5,
     verify_parity_preservation,
     verify_reversibility,
 )
-from src.gates.clifford_t_library import count_t_gates, calculate_t_depth
+from backend.app.gates.clifford_t_library import count_t_gates, calculate_t_depth
 
 
 def test_falfg_table4_truth_table_all_32_states():

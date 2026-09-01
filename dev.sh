@@ -1,37 +1,30 @@
 #!/usr/bin/env bash
-# Quantum ALU 3D Studio — Development Environment Launcher with Auto-Reload
+# ==============================================================================
+# Quantum ALU 3D Studio 2.0 — Modular Development Server Launcher
+# ==============================================================================
 
 set -e
 
-echo "🚀 Starting Quantum ALU 3D Studio Development Services..."
-
-# Clean up child processes on exit
-cleanup() {
-    echo ""
-    echo "🛑 Shutting down development services..."
-    kill 0 2>/dev/null || true
-    exit 0
-}
-
-trap cleanup SIGINT SIGTERM EXIT
-
-# Kill any stale processes on 8000 or 8502
+# Kill any lingering processes on ports 8000 and 5173
 fuser -k 8000/tcp 2>/dev/null || true
-fuser -k 8502/tcp 2>/dev/null || true
-sleep 1
+fuser -k 5173/tcp 2>/dev/null || true
 
-# Start FastAPI backend with --reload
-echo "⚡ Launching FastAPI backend server on http://localhost:8000 (auto-reload enabled)..."
-python3 -m uvicorn server:app --host 0.0.0.0 --port 8000 --reload &
+echo "🚀 Starting FastAPI Modular Python Backend (port 8000)..."
+python3 -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload &
+BACKEND_PID=$!
 
-# Start Streamlit frontend with runOnSave
-echo "📊 Launching Streamlit frontend server on http://localhost:8502 (auto-reload enabled)..."
-python3 -m streamlit run app.py --server.port 8502 --server.address 0.0.0.0 &
+echo "🚀 Starting Vite React TypeScript Frontend (port 5173)..."
+cd frontend
+npm run dev -- --port 5173 &
+FRONTEND_PID=$!
 
-echo ""
-echo "✅ Development Environment is READY!"
-echo "   - FastAPI Web Workbench: http://localhost:8000"
-echo "   - Streamlit View:        http://localhost:8502"
-echo "   (Press Ctrl+C to stop all servers)"
+echo "=============================================================================="
+echo "⚡ Quantum Studio Active Services:"
+echo "   - FastAPI Backend: http://localhost:8000"
+echo "   - Vite React Frontend: http://localhost:5173"
+echo "=============================================================================="
+
+# Trap SIGINT/SIGTERM to cleanly kill both background processes
+trap "kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true" EXIT
 
 wait

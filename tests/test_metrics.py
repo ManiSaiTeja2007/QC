@@ -1,9 +1,14 @@
+import sys
+from pathlib import Path
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 """Unit tests for Quantum Cost and Hardware Metrics."""
 
 import pytest
-from src.modules.falfg import build_falfg_clifford_t, build_falfg_ncv
-from src.modules.one_bit_alu import build_one_bit_alu_clifford_t, build_one_bit_alu_ncv
-from src.simulation.cost_metrics import analyze_circuit_cost, verify_theoretical_formulas
+from backend.app.modules.falfg import build_falfg_clifford_t, build_falfg_ncv
+from backend.app.modules.one_bit_alu import build_one_bit_alu_clifford_t, build_one_bit_alu_ncv
+from backend.app.simulation.cost_metrics import analyze_circuit_cost, verify_theoretical_formulas
 
 
 def test_falfg_metrics():

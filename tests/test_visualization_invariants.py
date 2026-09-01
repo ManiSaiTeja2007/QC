@@ -16,15 +16,16 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
+sys.path.insert(0, str(PROJECT_ROOT / "backend"))
 
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import Statevector
-from src.simulation.bloch_adapter import (
+from backend.app.simulation.bloch_adapter import (
     validate_density_matrix_invariants,
     compute_reduced_bloch_vector,
     compute_pauli_two_qubit_correlations,
 )
-from src.modules.one_bit_alu import build_one_bit_alu_clifford_t
+from backend.app.modules.one_bit_alu import build_one_bit_alu_clifford_t
 
 
 def test_1bit_alu_all_step_invariants():

@@ -1,11 +1,16 @@
+import sys
+from pathlib import Path
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 """Unit tests for Scalable N-Bit (4-Bit) Quantum ALU."""
 
 import pytest
-from src.modules.n_bit_alu import (
+from backend.app.modules.n_bit_alu import (
     build_4bit_alu,
     calculate_n_bit_theoretical_metrics,
 )
-from src.simulation.cost_metrics import verify_theoretical_formulas
+from backend.app.simulation.cost_metrics import verify_theoretical_formulas
 
 
 def test_4bit_alu_theoretical_formulas():

@@ -1,8 +1,13 @@
+import sys
+from pathlib import Path
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 """Unit tests for Step-by-Step Quantum Circuit Visualizer."""
 
 import pytest
-from src.gates.basic_gates import build_fredkin_circuit
-from src.simulation.step_visualizer import track_circuit_evolution
+from backend.app.gates.basic_gates import build_fredkin_circuit
+from backend.app.simulation.step_visualizer import track_circuit_evolution
 
 
 def test_track_circuit_evolution_fredkin():

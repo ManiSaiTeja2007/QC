@@ -21,10 +21,11 @@ import pytest
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
+sys.path.insert(0, str(PROJECT_ROOT / "backend"))
 
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import Statevector
-from src.simulation.bloch_adapter import state_to_bloch_vector, compute_reduced_bloch_vector
+from backend.app.simulation.bloch_adapter import state_to_bloch_vector, compute_reduced_bloch_vector
 
 
 def test_basis_state_ket_0():
