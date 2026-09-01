@@ -236,7 +236,41 @@ def simulate_single_gate(req: SingleGateRequest):
         qc.h(0)
 
     qubit_names = [f"Q{i}" for i in range(n_qubits)]
-    ir_payload = build_canonical_circuit_ir(qc, input_bits)
+    
+    # ── Initial Superposition & Phase State Vector Construction ─────────────
+    init_sv = None
+    if req.initial_state_mode and req.initial_state_mode not in ["0", "1", "00", "01", "10", "11", "000", "001", "010", "011", "100", "101", "110", "111"]:
+        from qiskit.quantum_info import Statevector
+        import numpy as np
+        mode = req.initial_state_mode.lower().strip()
+        angles = req.custom_polar_angles or [np.pi / 2, 0.0]
+
+        if n_qubits == 1:
+            if mode == "+":
+                init_sv = Statevector([1 / np.sqrt(2), 1 / np.sqrt(2)])
+            elif mode == "-":
+                init_sv = Statevector([1 / np.sqrt(2), -1 / np.sqrt(2)])
+            elif mode == "+i":
+                init_sv = Statevector([1 / np.sqrt(2), 1j / np.sqrt(2)])
+            elif mode == "-i":
+                init_sv = Statevector([1 / np.sqrt(2), -1j / np.sqrt(2)])
+            elif mode == "custom":
+                theta, phi = angles[0], angles[1] if len(angles) > 1 else 0.0
+                init_sv = Statevector([np.cos(theta / 2), np.exp(1j * phi) * np.sin(theta / 2)])
+        elif n_qubits == 2:
+            if mode == "++":
+                init_sv = Statevector([0.5, 0.5, 0.5, 0.5])
+            elif mode in ["bell_phi_plus", "phi+"]:
+                init_sv = Statevector([1 / np.sqrt(2), 0, 0, 1 / np.sqrt(2)])
+            elif mode in ["bell_psi_plus", "psi+"]:
+                init_sv = Statevector([0, 1 / np.sqrt(2), 1 / np.sqrt(2), 0])
+        elif n_qubits == 3:
+            if mode == "+++":
+                init_sv = Statevector([1 / np.sqrt(8)] * 8)
+            elif mode in ["ghz", "ghz_state"]:
+                init_sv = Statevector([1 / np.sqrt(2), 0, 0, 0, 0, 0, 0, 1 / np.sqrt(2)])
+
+    ir_payload = build_canonical_circuit_ir(qc, input_bits, initial_statevector=init_sv)
     metrics = analyze_circuit_cost(qc)
 
     ir_payload["circuit_name"] = f"Individual Gate Simulation: {name}"

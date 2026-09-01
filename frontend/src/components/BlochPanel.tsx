@@ -1,7 +1,8 @@
 import React, { useRef, useEffect } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { SimulationStep, BlochVector } from '../types/simulation';
+import { SimulationStep } from '../types/simulation';
+import { BlochVector3D, computeBlochTrajectoryAtTime } from '../services/blochMath';
 
 interface BlochPanelProps {
   numQubits: number;
@@ -11,442 +12,375 @@ interface BlochPanelProps {
   viewMode: 'all' | 'grid' | 'focus';
   onViewModeChange: (mode: 'all' | 'grid' | 'focus') => void;
   onSelectQubit: (qIdx: number) => void;
+  animTime?: number;
+  animMode?: 'vector' | 'trajectory' | 'both';
+  r0?: BlochVector3D;
+  r1?: BlochVector3D;
+  gateName?: string;
+  gateParams?: number[];
 }
 
-interface CustomArrowHelper extends THREE.ArrowHelper {
-  direction?: THREE.Vector3;
-}
+interface CustomArrow extends THREE.ArrowHelper { direction?: THREE.Vector3; }
 
-const QUBIT_COLORS = [
-  0xef4444, 0x3b82f6, 0x10b981, 0xf59e0b,
-  0x8b5cf6, 0xec4899, 0x14b8a6, 0x6366f1, 0x84cc16
-];
+const QUBIT_COLORS = [0x38bdf8, 0x3b82f6, 0x10b981, 0xf59e0b, 0x8b5cf6, 0xec4899];
 
-const BLOCH_LAYOUT = {
-  sphereRadius: 0.85,
-  labelRadius: 1.08,
-  titleOffset: 1.28,
-  spacingX: 2.30,
-  spacingY: 2.40,
-  safeMarginFactor: 1.18,
-};
+const LAYOUT = { rad: 0.90, spacingX: 2.50, spacingY: 2.50 };
 
-function blochToThreeJS(x: number, y: number, z: number): THREE.Vector3 {
+function blochToThree(x: number, y: number, z: number) {
+  // Bloch X → Three X,  Bloch Z → Three Y (up),  Bloch Y → Three Z (front)
   return new THREE.Vector3(x, z, y);
 }
 
-function createTextSprite(text: string, colorStr = '#94a3b8'): THREE.Sprite {
-  const canvas = document.createElement('canvas');
-  canvas.width = 128;
-  canvas.height = 64;
-  const ctx = canvas.getContext('2d')!;
-  ctx.font = 'Bold 28px Inter, sans-serif';
-  ctx.fillStyle = colorStr;
+function sprite(text: string, color = '#94a3b8'): THREE.Sprite {
+  const c = document.createElement('canvas');
+  c.width = 160; c.height = 56;
+  const ctx = c.getContext('2d')!;
+  ctx.font = 'bold 24px Inter,monospace';
+  ctx.fillStyle = color;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(text, 64, 32);
+  ctx.fillText(text, 80, 28);
+  const mat = new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true });
+  const s = new THREE.Sprite(mat);
+  s.scale.set(0.60, 0.26, 1);
+  return s;
+}
 
-  const texture = new THREE.CanvasTexture(canvas);
-  const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true });
-  const sprite = new THREE.Sprite(spriteMat);
-  sprite.scale.set(0.55, 0.28, 1.0);
-  return sprite;
+/** Full-featured sphere for Single Gate Lab focus view — coloured axes + labels */
+function buildFocusSphere(rad: number): THREE.Group {
+  const g = new THREE.Group();
+  const seg = 64;
+
+  // Translucent shell
+  const shell = new THREE.Mesh(
+    new THREE.SphereGeometry(rad, 32, 24),
+    new THREE.MeshPhongMaterial({ color: 0x0284c7, transparent: true, opacity: 0.12,
+      shininess: 60, specular: 0x38bdf8, depthWrite: false })
+  );
+  g.add(shell);
+
+  // Equator ring
+  const eq: THREE.Vector3[] = [];
+  for (let i = 0; i <= seg; i++) { const a = (i/seg)*Math.PI*2; eq.push(new THREE.Vector3(Math.cos(a)*rad,0,Math.sin(a)*rad)); }
+  g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(eq),
+    new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.45 })));
+
+  // Meridian ring (dashed)
+  const me: THREE.Vector3[] = [];
+  for (let i = 0; i <= seg; i++) { const a = (i/seg)*Math.PI*2; me.push(new THREE.Vector3(Math.cos(a)*rad,Math.sin(a)*rad,0)); }
+  const ml = new THREE.Line(new THREE.BufferGeometry().setFromPoints(me),
+    new THREE.LineDashedMaterial({ color: 0x334155, transparent: true, opacity: 0.3, dashSize: 0.07, gapSize: 0.04 }));
+  ml.computeLineDistances();
+  g.add(ml);
+
+  // Coloured axis lines (no arrowheads — only ONE arrow = the state vector)
+  const L = rad * 1.30;
+  const addLine = (a: THREE.Vector3, b: THREE.Vector3, color: number) =>
+    g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([a,b]),
+      new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.70 })));
+
+  addLine(new THREE.Vector3(-L,0,0), new THREE.Vector3(L,0,0), 0x38bdf8);  // X cyan
+  addLine(new THREE.Vector3(0,0,-L), new THREE.Vector3(0,0,L), 0xfbbf24);  // Y yellow
+  addLine(new THREE.Vector3(0,-L,0), new THREE.Vector3(0,L,0), 0x10b981);  // Z green
+
+  // Labels
+  const lp = rad * 1.35;
+  const addLabel = (text: string, x: number, y: number, z: number, col: string) => {
+    const s = sprite(text, col); s.position.set(x,y,z); g.add(s);
+  };
+  addLabel('|0⟩',   0, lp, 0,   '#10b981');
+  addLabel('|1⟩',   0,-lp, 0,   '#f43f5e');
+  addLabel('|+⟩',   lp, 0, 0,   '#38bdf8');
+  addLabel('|-⟩',  -lp, 0, 0,   '#38bdf8');
+  addLabel('|+i⟩',  0, 0, lp,   '#fbbf24');
+  addLabel('|-i⟩',  0, 0,-lp,   '#fbbf24');
+
+  return g;
+}
+
+/** Minimal clean sphere for Circuit Builder grid view — just rings, no axis lines or labels */
+function buildGridSphere(rad: number, isSelected: boolean): THREE.Group {
+  const g = new THREE.Group();
+  const seg = 48;
+
+  // Translucent shell
+  g.add(new THREE.Mesh(
+    new THREE.SphereGeometry(rad, 24, 18),
+    new THREE.MeshPhongMaterial({
+      color: isSelected ? 0x0284c7 : 0x1e3a5f,
+      transparent: true, opacity: isSelected ? 0.18 : 0.10,
+      shininess: 50, specular: isSelected ? 0x38bdf8 : 0x334155, depthWrite: false
+    })
+  ));
+
+  // Equator ring only
+  const eq: THREE.Vector3[] = [];
+  for (let i = 0; i <= seg; i++) { const a = (i/seg)*Math.PI*2; eq.push(new THREE.Vector3(Math.cos(a)*rad,0,Math.sin(a)*rad)); }
+  g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(eq),
+    new THREE.LineBasicMaterial({ color: isSelected ? 0x38bdf8 : 0x475569, transparent: true, opacity: isSelected ? 0.55 : 0.30 })));
+
+  // One subtle meridian ring
+  const me: THREE.Vector3[] = [];
+  for (let i = 0; i <= seg; i++) { const a = (i/seg)*Math.PI*2; me.push(new THREE.Vector3(Math.cos(a)*rad,Math.sin(a)*rad,0)); }
+  const ml = new THREE.Line(new THREE.BufferGeometry().setFromPoints(me),
+    new THREE.LineDashedMaterial({ color: 0x334155, transparent: true, opacity: 0.25, dashSize: 0.06, gapSize: 0.04 }));
+  ml.computeLineDistances();
+  g.add(ml);
+
+  return g;
 }
 
 export const BlochPanel: React.FC<BlochPanelProps> = ({
-  numQubits,
-  qubitNames,
-  stepData,
-  selectedQubit,
-  viewMode,
-  onViewModeChange,
-  onSelectQubit,
+  numQubits, qubitNames, stepData, selectedQubit,
+  viewMode, onViewModeChange, onSelectQubit,
+  animTime = 1.0, animMode = 'both',
+  r0, r1, gateName = 'H', gateParams,
 }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const sceneRef = useRef<THREE.Scene | null>(null);
-  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
-  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const controlsRef = useRef<OrbitControls | null>(null);
-  const groupsRef = useRef<{ group: THREE.Group; arrow: CustomArrowHelper }[]>([]);
-  const targetVectorsRef = useRef<THREE.Vector3[]>([]);
+  const containerRef    = useRef<HTMLDivElement>(null);
+  const canvasMountRef  = useRef<HTMLDivElement>(null);
+  const sceneRef        = useRef<THREE.Scene | null>(null);
+  const cameraRef       = useRef<THREE.PerspectiveCamera | null>(null);
+  const rendererRef     = useRef<THREE.WebGLRenderer | null>(null);
+  const controlsRef     = useRef<OrbitControls | null>(null);
+  const groupsRef       = useRef<{ group: THREE.Group; arrow: CustomArrow }[]>([]);
+  const targetVecsRef   = useRef<THREE.Vector3[]>([]);
+  const trailLineRef    = useRef<THREE.Line | null>(null);
 
-  // 1. Initialize Three.js WebGL Scene & Controls
+  // ── Init renderer + lights ──────────────────────────────────────────────────
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const width = container.clientWidth || 500;
-    const height = container.clientHeight || 380;
+    const el = canvasMountRef.current; if (!el) return;
+    const W = el.clientWidth || 500, H = el.clientHeight || 380;
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x030509);
     sceneRef.current = scene;
 
-    const camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(42, W/H, 0.1, 1000);
     cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(W, H);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    el.appendChild(renderer.domElement);
     rendererRef.current = renderer;
-    container.appendChild(renderer.domElement);
 
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
+    controls.enableDamping = true; controls.dampingFactor = 0.05;
     controlsRef.current = controls;
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
-    scene.add(ambientLight);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const key = new THREE.DirectionalLight(0xffffff, 1.2); key.position.set(5,10,7); scene.add(key);
+    const rim = new THREE.DirectionalLight(0x38bdf8,  0.7); rim.position.set(-5,-5,-5); scene.add(rim);
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
-    dirLight.position.set(5, 10, 7);
-    scene.add(dirLight);
-
-    let animId: number;
-    const animate = () => {
-      animId = requestAnimationFrame(animate);
-      if (controlsRef.current) controlsRef.current.update();
-
+    let id: number;
+    const loop = () => {
+      id = requestAnimationFrame(loop);
+      controls.update();
+      // Smooth-slerp each arrow toward its target
       groupsRef.current.forEach((g, i) => {
-        if (targetVectorsRef.current[i]) {
-          const arrow = g.arrow;
-          const targetVec = targetVectorsRef.current[i];
-          const targetLen = targetVec.length();
-
-          if (targetLen > 0.0001) {
-            const currentDir = arrow.direction
-              ? arrow.direction.clone().normalize()
-              : new THREE.Vector3(0, 1, 0);
-            const targetDir = targetVec.clone().normalize();
-
-            if (currentDir.dot(targetDir) < -0.999) {
-              currentDir.add(new THREE.Vector3(0.01, 0.01, 0)).normalize();
-            }
-
-            const qCurrent = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), currentDir);
-            const qTarget = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), targetDir);
-
-            qCurrent.slerp(qTarget, 0.25);
-            const newDir = new THREE.Vector3(0, 1, 0).applyQuaternion(qCurrent).normalize();
-
-            arrow.direction = newDir.clone();
-            arrow.setDirection(newDir);
-
-            const arrowLength = Math.max(0.2, targetLen * (viewMode === 'focus' ? 1.4 : BLOCH_LAYOUT.sphereRadius));
-            arrow.setLength(arrowLength, 0.22, 0.10);
-          }
-        }
+        const tv = targetVecsRef.current[i]; if (!tv) return;
+        const len = tv.length(); if (len < 0.0001) return;
+        const arr = g.arrow;
+        const cur = arr.direction ? arr.direction.clone().normalize() : new THREE.Vector3(0,1,0);
+        const tar = tv.clone().normalize();
+        if (cur.dot(tar) < -0.999) cur.add(new THREE.Vector3(0.01,0.01,0)).normalize();
+        const qC = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0), cur);
+        const qT = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0), tar);
+        qC.slerp(qT, 0.30);
+        const nd = new THREE.Vector3(0,1,0).applyQuaternion(qC).normalize();
+        arr.direction = nd.clone();
+        arr.setDirection(nd);
+        const al = viewMode === 'focus' ? 1.40 : LAYOUT.rad * 1.35;
+        arr.setLength(Math.max(0.2, len * al), 0.24, 0.12);
       });
-
       renderer.render(scene, camera);
     };
-    animate();
+    loop();
 
-    // Raycaster for 3D click selection
-    const handleCanvasClick = (event: MouseEvent) => {
-      if (!container || !cameraRef.current || !sceneRef.current) return;
-      const rect = container.getBoundingClientRect();
-      const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-      const raycaster = new THREE.Raycaster();
-      raycaster.setFromCamera(new THREE.Vector2(x, y), cameraRef.current);
-
-      const intersects = raycaster.intersectObjects(sceneRef.current.children, true);
-      for (const hit of intersects) {
+    // Raycaster click
+    const onClick = (e: MouseEvent) => {
+      if (!canvasMountRef.current || !cameraRef.current || !sceneRef.current) return;
+      const r = canvasMountRef.current.getBoundingClientRect();
+      const mouse = new THREE.Vector2(
+        ((e.clientX-r.left)/r.width)*2-1,
+        -((e.clientY-r.top)/r.height)*2+1
+      );
+      const ray = new THREE.Raycaster();
+      ray.setFromCamera(mouse, cameraRef.current);
+      for (const hit of ray.intersectObjects(sceneRef.current.children, true)) {
         let obj: THREE.Object3D | null = hit.object;
         while (obj && obj !== sceneRef.current) {
-          if (obj.userData && typeof obj.userData.qubitIndex === 'number') {
-            onSelectQubit(obj.userData.qubitIndex);
-            return;
-          }
+          if (typeof obj.userData.qubitIndex === 'number') { onSelectQubit(obj.userData.qubitIndex); return; }
           obj = obj.parent;
         }
       }
     };
-    container.addEventListener('click', handleCanvasClick);
+    el.addEventListener('click', onClick);
 
     const ro = new ResizeObserver(() => {
-      if (!container || !rendererRef.current || !cameraRef.current) return;
-      const w = container.clientWidth;
-      const h = container.clientHeight;
-      if (w === 0 || h === 0) return;
-      cameraRef.current.aspect = w / h;
+      if (!canvasMountRef.current || !rendererRef.current || !cameraRef.current) return;
+      const w = canvasMountRef.current.clientWidth, h = canvasMountRef.current.clientHeight;
+      if (!w || !h) return;
+      cameraRef.current.aspect = w/h;
       cameraRef.current.updateProjectionMatrix();
       rendererRef.current.setSize(w, h);
-      fitCamera();
+      positionCamera();
     });
-    ro.observe(container);
+    ro.observe(el);
 
     return () => {
-      cancelAnimationFrame(animId);
-      container.removeEventListener('click', handleCanvasClick);
+      cancelAnimationFrame(id);
+      el.removeEventListener('click', onClick);
       ro.disconnect();
+      controls.dispose();
       renderer.dispose();
-      container.innerHTML = '';
+      if (renderer.domElement.parentNode) {
+        renderer.domElement.parentNode.removeChild(renderer.domElement);
+      }
     };
-  }, [onSelectQubit]);
+  }, [onSelectQubit]); // eslint-disable-line
 
-  const fitCamera = () => {
-    if (!cameraRef.current) return;
-    const camera = cameraRef.current;
-    const controls = controlsRef.current;
-
+  const positionCamera = () => {
+    const cam = cameraRef.current; if (!cam) return;
+    const ctrl = controlsRef.current;
     if (viewMode === 'focus') {
-      camera.position.set(0, 0, 5.5);
-      if (controls) {
-        controls.target.set(0, 0, 0);
-        controls.update();
-      }
-      return;
+      cam.position.set(1.4, 1.6, 5.0);
+    } else {
+      const cols = Math.min(numQubits, 3);
+      const rows = Math.ceil(numQubits / cols);
+      const el = containerRef.current;
+      const W = el?.clientWidth ?? 500, H = el?.clientHeight ?? 380;
+      const fov = (cam.fov * Math.PI) / 180;
+      const gW = (cols-1)*LAYOUT.spacingX + 2.2;
+      const gH = (rows-1)*LAYOUT.spacingY + 2.2;
+      const dY = gH/2/Math.tan(fov/2);
+      const dX = gW/2/(Math.tan(fov/2)*(W/H));
+      const base = Math.max(dX, dY) * 1.18;
+      const min  = rows===1 ? 5.5 : rows===2 ? 8.5 : 12.0;
+      cam.position.set(0.6, 1.2, Math.max(min, base));
     }
-
-    const cols = numQubits <= 3 ? numQubits : 3;
-    const rows = Math.ceil(numQubits / cols);
-
-    const gridWidth = (cols - 1) * BLOCH_LAYOUT.spacingX + 2.5;
-    const gridHeight = (rows - 1) * BLOCH_LAYOUT.spacingY + 2.5;
-
-    const container = containerRef.current;
-    const width = container ? container.clientWidth : 500;
-    const height = container ? container.clientHeight : 380;
-    const aspect = width && height ? width / height : 1.2;
-
-    const fovRad = (camera.fov * Math.PI) / 180;
-    const distY = gridHeight / 2 / Math.tan(fovRad / 2);
-    const distX = gridWidth / 2 / (Math.tan(fovRad / 2) * aspect);
-    const dist = Math.max(distX, distY) * BLOCH_LAYOUT.safeMarginFactor;
-
-    const minRowDist = rows === 1 ? 6.5 : rows === 2 ? 10.0 : 13.5;
-    const finalDist = Math.max(minRowDist, dist);
-
-    camera.position.set(0, 0, finalDist);
-    if (controls) {
-      controls.target.set(0, 0, 0);
-      controls.update();
-    }
+    if (ctrl) { ctrl.target.set(0,0,0); ctrl.update(); }
   };
 
-  // 2. Rebuild 3D Spheres whenever numQubits, selectedQubit, or viewMode changes
+  // ── Rebuild spheres when topology / viewMode changes ───────────────────────
   useEffect(() => {
-    if (!sceneRef.current) return;
-    const scene = sceneRef.current;
-
-    groupsRef.current.forEach((g) => scene.remove(g.group));
-    groupsRef.current = [];
-    targetVectorsRef.current = [];
+    const scene = sceneRef.current; if (!scene) return;
+    groupsRef.current.forEach(g => scene.remove(g.group));
+    groupsRef.current = []; targetVecsRef.current = [];
 
     if (viewMode === 'focus') {
-      const q = selectedQubit;
-      const qGroup = new THREE.Group();
-      qGroup.position.set(0, 0, 0);
-      qGroup.userData = { qubitIndex: q };
+      const qg = new THREE.Group();
+      qg.userData = { qubitIndex: selectedQubit };
+      qg.add(buildFocusSphere(1.4));
+      const arr = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), 1.4, 0x38bdf8, 0.26, 0.13) as CustomArrow;
+      qg.add(arr);
+      scene.add(qg);
+      groupsRef.current.push({ group: qg, arrow: arr });
+      targetVecsRef.current.push(new THREE.Vector3(0, 1.4, 0));
+    } else {
+      const cols = Math.min(numQubits, 3);
+      const rows = Math.ceil(numQubits / cols);
+      for (let q = 0; q < numQubits; q++) {
+        const col = q % cols, row = Math.floor(q/cols);
+        const xp = (col-(cols-1)/2)*LAYOUT.spacingX;
+        const yp = ((rows-1)/2-row)*LAYOUT.spacingY;
+        const isSel = q === selectedQubit;
+        const qg = new THREE.Group();
+        qg.position.set(xp, yp, 0);
+        qg.userData = { qubitIndex: q };
+        qg.add(buildGridSphere(LAYOUT.rad, isSel));
 
-      const color = QUBIT_COLORS[q % QUBIT_COLORS.length];
-      const rad = 1.4;
+        // Qubit name label
+        const lbl = sprite(qubitNames[q]??`Q${q}`, isSel?'#38bdf8':'#64748b');
+        lbl.position.set(0, LAYOUT.rad*1.42, 0);
+        qg.add(lbl);
 
-      const sphereGeo = new THREE.SphereGeometry(rad, 24, 20);
-      const sphereMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true, transparent: true, opacity: 0.28 });
-      qGroup.add(new THREE.Mesh(sphereGeo, sphereMat));
-
-      const eqRingGeo = new THREE.RingGeometry(rad - 0.01, rad, 32);
-      const eqRingMat = new THREE.MeshBasicMaterial({ color: 0x3b82f6, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
-      const eqRingMesh = new THREE.Mesh(eqRingGeo, eqRingMat);
-      eqRingMesh.rotation.x = Math.PI / 2;
-      qGroup.add(eqRingMesh);
-
-      const axesGeo = new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(-rad * 1.15, 0, 0), new THREE.Vector3(rad * 1.15, 0, 0),
-        new THREE.Vector3(0, -rad * 1.15, 0), new THREE.Vector3(0, rad * 1.15, 0),
-        new THREE.Vector3(0, 0, -rad * 1.15), new THREE.Vector3(0, 0, rad * 1.15),
-      ]);
-      const axesMat = new THREE.LineDashedMaterial({ color: 0x94a3b8, dashSize: 0.08, gapSize: 0.04 });
-      const axesLines = new THREE.LineSegments(axesGeo, axesMat);
-      axesLines.computeLineDistances();
-      qGroup.add(axesLines);
-
-      const lbl0 = createTextSprite('|0⟩', '#34d399'); lbl0.position.set(0, rad * 1.2, 0); qGroup.add(lbl0);
-      const lbl1 = createTextSprite('|1⟩', '#f43f5e'); lbl1.position.set(0, -rad * 1.2, 0); qGroup.add(lbl1);
-      const lblP = createTextSprite('|+⟩', '#38bdf8'); lblP.position.set(rad * 1.2, 0, 0); qGroup.add(lblP);
-      const lblM = createTextSprite('|-⟩', '#64748b'); lblM.position.set(-rad * 1.2, 0, 0); qGroup.add(lblM);
-      const lblPI = createTextSprite('|+i⟩', '#06b6d4'); lblPI.position.set(0, 0, rad * 1.2); qGroup.add(lblPI);
-      const lblMI = createTextSprite('|-i⟩', '#6366f1'); lblMI.position.set(0, 0, -rad * 1.2); qGroup.add(lblMI);
-
-      const qName = qubitNames[q] ? qubitNames[q] : `Q${q}`;
-      const titleSprite = createTextSprite(qName, '#' + color.toString(16));
-      titleSprite.position.set(0, rad * 1.4, 0);
-      titleSprite.scale.set(1.0, 0.5, 1.0);
-      qGroup.add(titleSprite);
-
-      const dir = new THREE.Vector3(0, 1, 0);
-      const arrow = new THREE.ArrowHelper(dir, new THREE.Vector3(0,0,0), rad, color, 0.25, 0.12) as CustomArrowHelper;
-      arrow.direction = dir.clone();
-      qGroup.add(arrow);
-
-      scene.add(qGroup);
-      groupsRef.current.push({ group: qGroup, arrow });
-      targetVectorsRef.current.push(dir.clone());
-      fitCamera();
-      return;
+        const color = QUBIT_COLORS[q % QUBIT_COLORS.length];
+        const arr = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), LAYOUT.rad*1.35, color, 0.20, 0.10) as CustomArrow;
+        qg.add(arr);
+        scene.add(qg);
+        groupsRef.current.push({ group: qg, arrow: arr });
+        targetVecsRef.current.push(new THREE.Vector3(0, LAYOUT.rad*1.35, 0));
+      }
     }
+    positionCamera();
+  }, [numQubits, selectedQubit, viewMode, qubitNames]); // eslint-disable-line
 
-    const cols = numQubits <= 3 ? numQubits : 3;
-    const rows = Math.ceil(numQubits / cols);
-    const activeGateQubits = stepData?.gate ? stepData.gate.qubits : [];
-
-    for (let q = 0; q < numQubits; q++) {
-      const r = Math.floor(q / cols);
-      const c = q % cols;
-
-      const currRowCols = r < rows - 1 || numQubits % cols === 0 ? cols : numQubits % cols;
-      const gridX = (c - (currRowCols - 1) / 2.0) * BLOCH_LAYOUT.spacingX;
-      const gridY = ((rows - 1) / 2.0 - r) * BLOCH_LAYOUT.spacingY;
-
-      const qGroup = new THREE.Group();
-      qGroup.position.set(gridX, gridY, 0);
-      qGroup.userData = { qubitIndex: q };
-
-      const color = QUBIT_COLORS[q % QUBIT_COLORS.length];
-      const rad = BLOCH_LAYOUT.sphereRadius;
-
-      const isSel = q === selectedQubit;
-      const isActiveGate = activeGateQubits.includes(q);
-
-      // Consistently dimmed subtle wireframe sphere — NO bright highlighting on sphere lines
-      const sphereGeo = new THREE.SphereGeometry(rad, 20, 16);
-      const sphereMat = new THREE.MeshBasicMaterial({
-        color: 0x1e293b,
-        wireframe: true,
-        transparent: true,
-        opacity: 0.15,
-      });
-      qGroup.add(new THREE.Mesh(sphereGeo, sphereMat));
-
-      const eqRingGeo = new THREE.RingGeometry(rad - 0.01, rad, 32);
-      const eqRingMat = new THREE.MeshBasicMaterial({
-        color: 0x334155,
-        side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 0.25,
-      });
-      const eqRingMesh = new THREE.Mesh(eqRingGeo, eqRingMat);
-      eqRingMesh.rotation.x = Math.PI / 2;
-      qGroup.add(eqRingMesh);
-
-      const axesGeo = new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(-rad * 1.12, 0, 0), new THREE.Vector3(rad * 1.12, 0, 0),
-        new THREE.Vector3(0, -rad * 1.12, 0), new THREE.Vector3(0, rad * 1.12, 0),
-        new THREE.Vector3(0, 0, -rad * 1.12), new THREE.Vector3(0, 0, rad * 1.12),
-      ]);
-      const axesMat = new THREE.LineDashedMaterial({ color: 0x64748b, dashSize: 0.08, gapSize: 0.04 });
-      const axesLines = new THREE.LineSegments(axesGeo, axesMat);
-      axesLines.computeLineDistances();
-      qGroup.add(axesLines);
-
-      const lbl0 = createTextSprite('|0⟩', '#34d399'); lbl0.position.set(0, BLOCH_LAYOUT.labelRadius, 0); qGroup.add(lbl0);
-      const lbl1 = createTextSprite('|1⟩', '#f43f5e'); lbl1.position.set(0, -BLOCH_LAYOUT.labelRadius, 0); qGroup.add(lbl1);
-      const lblP = createTextSprite('|+⟩', '#38bdf8'); lblP.position.set(BLOCH_LAYOUT.labelRadius, 0, 0); qGroup.add(lblP);
-      const lblM = createTextSprite('|-⟩', '#64748b'); lblM.position.set(-BLOCH_LAYOUT.labelRadius, 0, 0); qGroup.add(lblM);
-      const lblPI = createTextSprite('|+i⟩', '#06b6d4'); lblPI.position.set(0, 0, BLOCH_LAYOUT.labelRadius); qGroup.add(lblPI);
-      const lblMI = createTextSprite('|-i⟩', '#6366f1'); lblMI.position.set(0, 0, -BLOCH_LAYOUT.labelRadius); qGroup.add(lblMI);
-
-      const qName = qubitNames[q] ? qubitNames[q].split(' ')[0] : `Q${q}`;
-      const titleSprite = createTextSprite(qName, '#' + color.toString(16));
-      titleSprite.position.set(0, BLOCH_LAYOUT.titleOffset, 0);
-      titleSprite.scale.set(0.75, 0.38, 1.0);
-      qGroup.add(titleSprite);
-
-      const dir = new THREE.Vector3(0, 1, 0);
-      const arrow = new THREE.ArrowHelper(dir, new THREE.Vector3(0,0,0), rad, color, 0.18, 0.08) as CustomArrowHelper;
-      arrow.direction = dir.clone();
-      qGroup.add(arrow);
-
-      scene.add(qGroup);
-      groupsRef.current.push({ group: qGroup, arrow });
-      targetVectorsRef.current.push(dir.clone());
-    }
-
-    fitCamera();
-  }, [numQubits, selectedQubit, viewMode]);
-
-  // 3. Update target vectors when stepData changes
+  // ── Update target vectors from physics ─────────────────────────────────────
   useEffect(() => {
-    if (!stepData) return;
+    if (r0 && r1 && viewMode === 'focus' && numQubits === 1) {
+      const rT = computeBlochTrajectoryAtTime(gateName, r0, r1, animTime, gateParams);
+      if (targetVecsRef.current[0]) targetVecsRef.current[0] = blochToThree(rT.x, rT.y, rT.z);
 
-    stepData.bloch_vectors.forEach((bv, i) => {
-      if (viewMode === 'focus') {
-        if (i === selectedQubit && targetVectorsRef.current[0]) {
-          targetVectorsRef.current[0].copy(blochToThreeJS(bv.x, bv.y, bv.z));
+      // Trajectory trail
+      if (sceneRef.current && (animMode==='trajectory'||animMode==='both')) {
+        if (trailLineRef.current) { sceneRef.current.remove(trailLineRef.current); trailLineRef.current=null; }
+        const pts: THREE.Vector3[] = [];
+        const steps = Math.max(2, Math.floor(animTime*40));
+        for (let i=0; i<=steps; i++) {
+          const sub = computeBlochTrajectoryAtTime(gateName, r0, r1, i/40, gateParams);
+          pts.push(blochToThree(sub.x*1.36, sub.y*1.36, sub.z*1.36));
         }
-      } else if (targetVectorsRef.current[i]) {
-        targetVectorsRef.current[i].copy(blochToThreeJS(bv.x, bv.y, bv.z));
+        const line = new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints(pts),
+          new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.85 })
+        );
+        sceneRef.current.add(line);
+        trailLineRef.current = line;
+      } else if (sceneRef.current && animMode==='vector' && trailLineRef.current) {
+        sceneRef.current.remove(trailLineRef.current); trailLineRef.current=null;
       }
-    });
-  }, [stepData, selectedQubit, viewMode]);
-
-  const setCameraPreset = (preset: string) => {
-    if (!cameraRef.current) return;
-    const camera = cameraRef.current;
-    if (preset === 'reset') {
-      fitCamera();
       return;
     }
 
-    const dist = camera.position.length() || 8.0;
-    if (preset === 'front') camera.position.set(dist, 0, 0);
-    if (preset === 'top') camera.position.set(0, dist, 0.001);
-    if (preset === 'side') camera.position.set(0, 0, dist);
-
-    if (controlsRef.current) {
-      controlsRef.current.target.set(0, 0, 0);
-      controlsRef.current.update();
+    if (!stepData) return;
+    const bvs = stepData.bloch_vectors;
+    if (viewMode === 'focus') {
+      const b = bvs[selectedQubit]??{x:0,y:0,z:1};
+      if (targetVecsRef.current[0]) targetVecsRef.current[0] = blochToThree(b.x,b.y,b.z);
+    } else {
+      bvs.forEach((b,q) => { if (targetVecsRef.current[q]) targetVecsRef.current[q]=blochToThree(b.x,b.y,b.z); });
     }
-  };
+  }, [stepData, selectedQubit, viewMode, animTime, animMode, r0, r1, gateName, gateParams, numQubits]);
 
   return (
-    <article className="card panel-bloch">
-      <div className="card-header">
-        <h3>🌐 3D WebGL Bloch Studio</h3>
+    <div className="bloch-container" ref={containerRef} style={{ position: 'relative' }}>
+      <div className="bloch-canvas-mount" ref={canvasMountRef} style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }} />
 
-        <div className="view-mode-toggle">
-          <button
-            className={`btn-xs ${viewMode === 'all' ? 'active' : ''}`}
-            onClick={() => onViewModeChange('all')}
-          >
-            All Qubits
-          </button>
-          <button
-            className={`btn-xs ${viewMode === 'grid' ? 'active' : ''}`}
-            onClick={() => onViewModeChange('grid')}
-          >
-            Grid 3D
-          </button>
-          <button
-            className={`btn-xs ${viewMode === 'focus' ? 'active' : ''}`}
-            onClick={() => onViewModeChange('focus')}
-          >
-            Focus Q{selectedQubit}
-          </button>
+      {/* Axis legend (focus view only — clutter in grid view) */}
+      {viewMode === 'focus' && (
+        <div className="bloch-axis-legend-overlay">
+          <div className="axis-legend-title">3D BLOCH SPHERE</div>
+          <div className="axis-legend-item cyan">— X (Right, |+⟩)</div>
+          <div className="axis-legend-item yellow">— Y (Front, |+i⟩)</div>
+          <div className="axis-legend-item green">— Z (Up, |0⟩)</div>
         </div>
+      )}
 
-        <div className="cam-btn-group">
-          <button className="btn-xs" title="Reset View" onClick={() => setCameraPreset('reset')}>
-            🎥 Reset
-          </button>
-          <button className="btn-xs" title="Front View" onClick={() => setCameraPreset('front')}>
-            +X
-          </button>
-          <button className="btn-xs" title="Top View" onClick={() => setCameraPreset('top')}>
-            +Z
-          </button>
-          <button className="btn-xs" title="Side View" onClick={() => setCameraPreset('side')}>
-            +Y
-          </button>
-        </div>
+      {/* Pure state tag */}
+      <div className="bloch-pure-state-overlay">
+        <span className="pure-tag">Pure State</span>
+        <span className="purity-val">|r|=1.000</span>
       </div>
 
-      <div ref={containerRef} className="bloch-canvas-box" />
-    </article>
+      {/* Bottom info */}
+      {viewMode === 'focus' && (
+        <div className="bloch-bottom-info-overlay">
+          <span>t = {animTime.toFixed(3)}</span>
+          <span>── r(t)</span>
+          <span>--- trail</span>
+        </div>
+      )}
+
+      {/* Grid / Focus toggle */}
+      <div className="bloch-mode-overlay">
+        <button className={`btn-mode-toggle ${viewMode!=='focus'?'active':''}`} onClick={() => onViewModeChange('all')}>
+          Grid
+        </button>
+        <button className={`btn-mode-toggle ${viewMode==='focus'?'active':''}`} onClick={() => onViewModeChange('focus')}>
+          Focus
+        </button>
+      </div>
+    </div>
   );
 };

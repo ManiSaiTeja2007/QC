@@ -21,6 +21,8 @@ class SingleGateRequest(BaseModel):
     gate_name: str = Field(..., description="Name of the gate to simulate (e.g. H, X, T, CX, RX)")
     input_bits: List[int] = Field(..., description="Initial computational basis bits")
     params: Optional[List[float]] = Field(None, description="Optional parameters for parametric gates (e.g. theta)")
+    initial_state_mode: Optional[str] = Field(None, description="Initial state mode: '0', '1', '+', '-', '+i', '-i', 'custom', 'bell_phi_plus', 'ghz'")
+    custom_polar_angles: Optional[List[float]] = Field(None, description="Polar [theta, phi] angles for custom superposition state")
 
 
 class SimulationRequest(BaseModel):

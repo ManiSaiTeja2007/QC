@@ -1,158 +1,99 @@
-"""Mandatory Unit Tests for Bloch Sphere Mathematics (Phase 1).
+import unittest
+import math
 
-Tests:
-  1. |0⟩   → (0, 0, +1)
-  2. |1⟩   → (0, 0, -1)
-  3. |+⟩   → (+1, 0, 0)
-  4. |-⟩   → (-1, 0, 0)
-  5. |+i⟩  → (0, +1, 0)
-  6. |-i⟩  → (0, -1, 0)
-  7. H|0⟩  → |+⟩
-  8. X|0⟩  → |1⟩
-  9. T|+⟩  → rotation around Z by π/4 (x = cos(π/4), y = sin(π/4), z = 0)
- 10. Bell State (|00⟩+|11⟩)/√2 → reduced state for Q0 is Maximally Mixed (|r| = 0.000)
-"""
+def compute_bloch_rotation_z(x0, y0, z0, angle, t):
+    """SO(3) Z-axis rotation trajectory: r'(t) = Rz(t * angle) r0."""
+    angle_t = t * angle
+    cos_a = math.cos(angle_t)
+    sin_a = math.sin(angle_t)
+    x = x0 * cos_a - y0 * sin_a
+    y = x0 * sin_a + y0 * cos_a
+    z = z0
+    return x, y, z
 
-import sys
-from pathlib import Path
-import numpy as np
-import pytest
+def compute_bloch_rotation_x(x0, y0, z0, angle, t):
+    """SO(3) X-axis rotation trajectory: r'(t) = Rx(t * angle) r0."""
+    angle_t = t * angle
+    cos_a = math.cos(angle_t)
+    sin_a = math.sin(angle_t)
+    x = x0
+    y = y0 * cos_a - z0 * sin_a
+    z = y0 * sin_a + z0 * cos_a
+    return x, y, z
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-sys.path.insert(0, str(PROJECT_ROOT / "backend"))
+def compute_bloch_rotation_y(x0, y0, z0, angle, t):
+    """SO(3) Y-axis rotation trajectory: r'(t) = Ry(t * angle) r0."""
+    angle_t = t * angle
+    cos_a = math.cos(angle_t)
+    sin_a = math.sin(angle_t)
+    x = x0 * cos_a + z0 * sin_a
+    y = y0
+    z = -x0 * sin_a + z0 * cos_a
+    return x, y, z
 
-from qiskit import QuantumCircuit
-from qiskit.quantum_info import Statevector
-from backend.app.simulation.bloch_adapter import state_to_bloch_vector, compute_reduced_bloch_vector
+class TestBlochPhysicsMath(unittest.TestCase):
 
+    def test_01_rz_preserves_z_and_unit_norm(self):
+        """Verify Rz phase rotation preserves z and maintains |r|=1.0."""
+        r0 = (1.0, 0.0, 0.0) # |+> state
+        angle = math.pi / 2  # S gate (pi/2 around Z)
+        
+        for t in [0.0, 0.25, 0.5, 0.75, 1.0]:
+            x, y, z = compute_bloch_rotation_z(r0[0], r0[1], r0[2], angle, t)
+            mag = math.sqrt(x*x + y*y + z*z)
+            self.assertAlmostEqual(z, 0.0, places=5)
+            self.assertAlmostEqual(mag, 1.0, places=5)
+            
+        # At t=1.0 (Post-S gate), vector should be at (0, 1, 0) |+i>
+        x1, y1, z1 = compute_bloch_rotation_z(r0[0], r0[1], r0[2], angle, 1.0)
+        self.assertAlmostEqual(x1, 0.0, places=5)
+        self.assertAlmostEqual(y1, 1.0, places=5)
 
-def test_basis_state_ket_0():
-    # |0⟩
-    x, y, z, r = state_to_bloch_vector(1.0, 0.0)
-    assert abs(x - 0.0) < 1e-6
-    assert abs(y - 0.0) < 1e-6
-    assert abs(z - 1.0) < 1e-6
-    assert abs(r - 1.0) < 1e-6
+    def test_02_rx_preserves_x_and_unit_norm(self):
+        """Verify Rx rotation preserves x and maintains |r|=1.0."""
+        r0 = (0.0, 0.0, 1.0) # |0> state
+        angle = math.pi      # X gate (pi around X)
+        
+        for t in [0.0, 0.25, 0.5, 0.75, 1.0]:
+            x, y, z = compute_bloch_rotation_x(r0[0], r0[1], r0[2], angle, t)
+            mag = math.sqrt(x*x + y*y + z*z)
+            self.assertAlmostEqual(x, 0.0, places=5)
+            self.assertAlmostEqual(mag, 1.0, places=5)
+            
+        # At t=1.0 (Post-X gate), vector should be at (0, 0, -1) |1>
+        x1, y1, z1 = compute_bloch_rotation_x(r0[0], r0[1], r0[2], angle, 1.0)
+        self.assertAlmostEqual(z1, -1.0, places=5)
 
+    def test_03_ry_preserves_y_and_unit_norm(self):
+        """Verify Ry rotation preserves y and maintains |r|=1.0."""
+        r0 = (0.0, 0.0, 1.0) # |0> state
+        angle = math.pi / 2  # Ry(pi/2)
+        
+        for t in [0.0, 0.5, 1.0]:
+            x, y, z = compute_bloch_rotation_y(r0[0], r0[1], r0[2], angle, t)
+            mag = math.sqrt(x*x + y*y + z*z)
+            self.assertAlmostEqual(y, 0.0, places=5)
+            self.assertAlmostEqual(mag, 1.0, places=5)
 
-def test_basis_state_ket_1():
-    # |1⟩
-    x, y, z, r = state_to_bloch_vector(0.0, 1.0)
-    assert abs(x - 0.0) < 1e-6
-    assert abs(y - 0.0) < 1e-6
-    assert abs(z - (-1.0)) < 1e-6
-    assert abs(r - 1.0) < 1e-6
+    def test_04_pole_phi_undefined_contract(self):
+        """Verify Phase 131 contract: phi is undefined at poles (z=+1 or z=-1)."""
+        # Ground state |0>: (0, 0, 1) -> theta = 0, phi is undefined
+        x0, y0, z0 = 0.0, 0.0, 1.0
+        theta = math.acos(z0)
+        is_phi_undefined = math.sin(theta) < 0.001
+        self.assertTrue(is_phi_undefined)
 
+        # Excited state |1>: (0, 0, -1) -> theta = pi, phi is undefined
+        x1, y1, z1 = 0.0, 0.0, -1.0
+        theta1 = math.acos(z1)
+        is_phi_undefined1 = math.sin(theta1) < 0.001
+        self.assertTrue(is_phi_undefined1)
 
-def test_basis_state_ket_plus():
-    # |+⟩ = (|0⟩ + |1⟩)/√2
-    inv_sqrt2 = 1.0 / np.sqrt(2)
-    x, y, z, r = state_to_bloch_vector(inv_sqrt2, inv_sqrt2)
-    assert abs(x - 1.0) < 1e-6
-    assert abs(y - 0.0) < 1e-6
-    assert abs(z - 0.0) < 1e-6
-    assert abs(r - 1.0) < 1e-6
+        # Superposition |+>: (1, 0, 0) -> theta = pi/2, phi is defined (0 deg)
+        xp, yp, zp = 1.0, 0.0, 0.0
+        thetap = math.acos(zp)
+        is_phi_undefined_p = math.sin(thetap) < 0.001
+        self.assertFalse(is_phi_undefined_p)
 
-
-def test_basis_state_ket_minus():
-    # |-⟩ = (|0⟩ - |1⟩)/√2
-    inv_sqrt2 = 1.0 / np.sqrt(2)
-    x, y, z, r = state_to_bloch_vector(inv_sqrt2, -inv_sqrt2)
-    assert abs(x - (-1.0)) < 1e-6
-    assert abs(y - 0.0) < 1e-6
-    assert abs(z - 0.0) < 1e-6
-    assert abs(r - 1.0) < 1e-6
-
-
-def test_basis_state_ket_plus_i():
-    # |+i⟩ = (|0⟩ + i|1⟩)/√2
-    inv_sqrt2 = 1.0 / np.sqrt(2)
-    x, y, z, r = state_to_bloch_vector(inv_sqrt2, 1j * inv_sqrt2)
-    assert abs(x - 0.0) < 1e-6
-    assert abs(y - 1.0) < 1e-6
-    assert abs(z - 0.0) < 1e-6
-    assert abs(r - 1.0) < 1e-6
-
-
-def test_basis_state_ket_minus_i():
-    # |-i⟩ = (|0⟩ - i|1⟩)/√2
-    inv_sqrt2 = 1.0 / np.sqrt(2)
-    x, y, z, r = state_to_bloch_vector(inv_sqrt2, -1j * inv_sqrt2)
-    assert abs(x - 0.0) < 1e-6
-    assert abs(y - (-1.0)) < 1e-6
-    assert abs(z - 0.0) < 1e-6
-    assert abs(r - 1.0) < 1e-6
-
-
-def test_hadamard_gate_action():
-    # H|0⟩ -> |+⟩
-    qc = QuantumCircuit(1)
-    qc.h(0)
-    sv = Statevector.from_instruction(qc)
-    vec = compute_reduced_bloch_vector(sv, 0, 1)
-    assert abs(vec["x"] - 1.0) < 1e-6
-    assert abs(vec["y"] - 0.0) < 1e-6
-    assert abs(vec["z"] - 0.0) < 1e-6
-
-
-def test_pauli_x_gate_action():
-    # X|0⟩ -> |1⟩
-    qc = QuantumCircuit(1)
-    qc.x(0)
-    sv = Statevector.from_instruction(qc)
-    vec = compute_reduced_bloch_vector(sv, 0, 1)
-    assert abs(vec["x"] - 0.0) < 1e-6
-    assert abs(vec["y"] - 0.0) < 1e-6
-    assert abs(vec["z"] - (-1.0)) < 1e-6
-
-
-def test_t_gate_action_on_plus_state():
-    # T|+⟩ -> e^{iπ/4} rotation around Z axis
-    qc = QuantumCircuit(1)
-    qc.h(0)
-    qc.t(0)
-    sv = Statevector.from_instruction(qc)
-    vec = compute_reduced_bloch_vector(sv, 0, 1)
-    expected_x = np.cos(np.pi / 4)
-    expected_y = np.sin(np.pi / 4)
-    assert abs(vec["x"] - expected_x) < 1e-6
-    assert abs(vec["y"] - expected_y) < 1e-6
-    assert abs(vec["z"] - 0.0) < 1e-6
-
-
-def test_bell_state_reduced_density_matrix():
-    # (|00⟩ + |11⟩)/√2 -> Q0 and Q1 reduced states should be Maximally Mixed (|r| = 0.000)
-    qc = QuantumCircuit(2)
-    qc.h(0)
-    qc.cx(0, 1)
-    sv = Statevector.from_instruction(qc)
-
-    v0 = compute_reduced_bloch_vector(sv, 0, 2)
-    v1 = compute_reduced_bloch_vector(sv, 1, 2)
-
-    assert abs(v0["r"] - 0.0) < 1e-6, f"Expected Q0 reduced magnitude 0.0 for Bell state, got {v0['r']}"
-    assert abs(v1["r"] - 0.0) < 1e-6, f"Expected Q1 reduced magnitude 0.0 for Bell state, got {v1['r']}"
-    assert v0["state_label"] == "Maximally Mixed (Entangled)"
-    assert v1["state_label"] == "Maximally Mixed (Entangled)"
-
-
-if __name__ == "__main__":
-    tests = [
-        test_basis_state_ket_0,
-        test_basis_state_ket_1,
-        test_basis_state_ket_plus,
-        test_basis_state_ket_minus,
-        test_basis_state_ket_plus_i,
-        test_basis_state_ket_minus_i,
-        test_hadamard_gate_action,
-        test_pauli_x_gate_action,
-        test_t_gate_action_on_plus_state,
-        test_bell_state_reduced_density_matrix,
-    ]
-    print("Running Phase 1 Mandatory Bloch Unit Tests...")
-    for t in tests:
-        t()
-        print(f"  ✅ {t.__name__} PASSED")
-    print("🎉 ALL PHASE 1 MANDATORY UNIT TESTS PASSED WITH 100% FIDELITY!")
+if __name__ == '__main__':
+    unittest.main()

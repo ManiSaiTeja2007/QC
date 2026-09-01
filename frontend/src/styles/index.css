@@ -1150,6 +1150,14 @@ select:hover {
   overflow: hidden;
 }
 
+.panel-state {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+}
+
 .live-simulation-workspace {
   display: flex;
   flex-direction: column;
@@ -1216,88 +1224,946 @@ select:hover {
   fill: #881337 !important;
 }
 
-/* ─── Gate Schematic Diagram (Single Gate Lab) ────────────────────────────── */
-.gate-schematic-wrapper {
-  background: #060911;
+/* ─── Quantum Gate Mathematical Formulation Card ────────────────────────── */
+.gate-formula-card {
+  background: radial-gradient(circle at top left, #090e1a 0%, #030712 100%);
   border: 1px solid #1e293b;
-  border-radius: 6px;
-  padding: 10px 12px;
-  margin-top: 10px;
-  margin-bottom: 10px;
-
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-top: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
-.schematic-title {
+.formula-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 0.76rem;
-  color: #94a3b8;
-  margin-bottom: 8px;
+  border-bottom: 1px solid #1e293b;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
 }
 
-.mapping-badge {
-  background: #0f172a;
-  border: 1px solid #3b82f6;
+.formula-op-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.formula-op-symbol {
+  font-family: var(--font-mono, monospace);
+  font-size: 1.05rem;
+  font-weight: 700;
   color: #38bdf8;
-  padding: 2px 6px;
+  text-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+}
+
+.formula-dim-tag {
+  font-size: 0.70rem;
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #94a3b8;
+  padding: 1px 6px;
   border-radius: 4px;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-family: var(--font-mono, monospace);
+}
+
+.formula-type-badge {
+  font-size: 0.68rem;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 2px 7px;
+  border-radius: 4px;
   font-weight: 600;
 }
 
-.gate-schematic-svg {
+.formula-section {
+  margin-bottom: 10px;
+}
+
+.formula-sec-lbl {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.06em;
+  margin-bottom: 5px;
+}
+
+.formula-ket-box {
+  background: #060b17;
+  border: 1px solid #131d31;
+  border-radius: 6px;
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ket-eq-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.78rem;
+  color: #e2e8f0;
+}
+
+.ket-eq-bullet {
+  color: #38bdf8;
+  font-size: 0.65rem;
+}
+
+.ket-eq-text {
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.formula-matrix-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #060b17;
+  border: 1px solid #131d31;
+  border-radius: 6px;
+  padding: 8px 12px;
+  overflow-x: auto;
+}
+
+.matrix-scalar-prefix {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fbbf24;
+}
+
+.matrix-bracket-box {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  position: relative;
+  padding: 4px 10px;
+  border-left: 2.5px solid #38bdf8;
+  border-right: 2.5px solid #38bdf8;
+  border-radius: 4px;
+  background: rgba(15, 23, 42, 0.4);
+}
+
+.matrix-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.matrix-cell {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.76rem;
+  min-width: 20px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.matrix-bracket-box.dim-2 .matrix-cell {
+  font-size: 0.70rem;
+  min-width: 16px;
+  gap: 8px;
+}
+
+.matrix-bracket-box.dim-3 .matrix-cell {
+  font-size: 0.60rem;
+  min-width: 10px;
+  gap: 4px;
+}
+
+.cell-zero {
+  color: #475569;
+}
+
+.cell-pos {
+  color: #38bdf8;
+}
+
+.cell-neg {
+  color: #f43f5e;
+}
+
+.cell-imag {
+  color: #fbbf24;
+}
+
+.formula-footer-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.formula-stat-pill {
+  flex: 1 1 calc(50% - 6px);
+  background: #090e1a;
+  border: 1px solid #1e293b;
+  border-radius: 4px;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.70rem;
+}
+
+.stat-pill-k {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.stat-pill-v {
+  color: #e2e8f0;
+  font-family: var(--font-mono, monospace);
+  font-weight: 600;
+}
+
+.phase-gate-tip-banner {
+  background: #0f172a;
+  border: 1px solid #0284c7;
+  border-radius: 6px;
+  color: #38bdf8;
+  font-size: 0.75rem;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+  line-height: 1.35;
+}
+
+.custom-angles-box {
+  background: #090d16;
+  border: 1px dashed #334155;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-top: 6px;
+  margin-bottom: 8px;
+}
+
+/* ─── Phase 104-112 Single Gate Laboratory UX 2.0 ──────────────────────────── */
+.visual-gate-palette, .visual-state-picker {
+  margin-bottom: 12px;
+}
+
+.btn-run-gate-explicit {
+  width: 100%;
+  padding: 10px;
+  font-size: 0.88rem;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  margin-top: 8px;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+  border-color: #38bdf8 !important;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3) !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-run-gate-explicit:hover {
+  background: linear-gradient(135deg, #0369a1 0%, #075985 100%) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(56, 189, 248, 0.4) !important;
+}
+
+.palette-title {
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: #94a3b8;
+  margin-bottom: 6px;
+}
+
+.gate-category-tabs, .state-category-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+  overflow-x: auto;
+}
+
+.cat-tab {
+  background: #0d1527;
+  border: 1px solid #1e293b;
+  color: #64748b;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.cat-tab:hover {
+  color: #cbd5e1;
+  border-color: #334155;
+}
+
+.cat-tab.active {
+  background: #1e293b;
+  border-color: #0284c7;
+  color: #38bdf8;
+}
+
+.gate-badge-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.gate-badge {
+  background: #0b1329;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  padding: 6px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.gate-badge:hover {
+  border-color: #38bdf8;
+  transform: translateY(-1px);
+}
+
+.gate-badge.selected {
+  background: #0f2b48;
+  border-color: #38bdf8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.25);
+}
+
+.gate-badge-symbol {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: bold;
+  color: #f8fafc;
+}
+
+.gate-badge-name {
+  font-size: 0.65rem;
+  color: #94a3b8;
+}
+
+.parametric-controls-box {
+  background: #090d16;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+}
+
+.quick-angle-buttons {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.btn-angle {
+  flex: 1;
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #cbd5e1;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  padding: 2px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-angle:hover {
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+.state-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.state-card {
+  background: #0b1329;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  padding: 6px 8px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.state-card:hover {
+  border-color: #38bdf8;
+  transform: translateY(-1px);
+}
+
+.state-card.active {
+  background: #0f2b48;
+  border-color: #38bdf8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.25);
+}
+
+.state-card-symbol {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: #38bdf8;
+}
+
+.state-card-dir {
+  font-size: 0.65rem;
+  color: #10b981;
+  font-weight: 500;
+}
+
+.state-card-bloch {
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  color: #10b981;
+  margin-top: 2px;
+}
+
+.state-card-lbl {
+  font-size: 0.62rem;
+  color: #94a3b8;
+}
+
+.custom-state-minilab {
+  background: #090d16;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-top: 8px;
+}
+
+.minilab-title {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: #38bdf8;
+  margin-bottom: 6px;
+  font-weight: bold;
+}
+
+.custom-readout-card {
+  display: flex;
+  justify-content: space-between;
   background: #030712;
   border: 1px solid #111827;
   border-radius: 4px;
-  display: block;
-  margin: 0 auto;
-}
-
-.schematic-q-lbl {
-  fill: #94a3b8;
+  padding: 6px 8px;
+  margin-top: 6px;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 0.7rem;
+  color: #e2e8f0;
 }
 
-.schematic-wire {
-  stroke: #334155;
-  stroke-width: 2px;
+.readout-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.schematic-conn-line {
-  stroke: #38bdf8;
-  stroke-width: 2px;
+.readout-col.bloch-coords {
+  color: #10b981;
 }
 
-.schematic-ctrl-dot {
-  fill: #38bdf8;
+.btn-why-physics {
+  background: #0284c7 !important;
+  color: #ffffff !important;
+  font-weight: bold !important;
+  border-color: #0369a1 !important;
 }
 
-.schematic-target-circle {
-  fill: #0d1527;
-  stroke: #38bdf8;
-  stroke-width: 2px;
+.btn-why-physics:hover {
+  background: #0369a1 !important;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.4) !important;
 }
 
-.schematic-target-cross {
-  stroke: #38bdf8;
-  stroke-width: 2px;
+/* Why Physics Modal */
+.why-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
 }
 
-.schematic-gate-box {
-  fill: #0f172a;
-  stroke: #3b82f6;
-  stroke-width: 1.5px;
-  rx: 3px;
+.why-modal-card {
+  background: #0b1329;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  width: 580px;
+  max-width: 90vw;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
 }
 
-.schematic-gate-lbl {
-  fill: #f8fafc;
+.why-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #0f172a;
+  border-bottom: 1px solid #1e293b;
+}
+
+.why-modal-header h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #38bdf8;
+}
+
+.btn-close-modal {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.btn-close-modal:hover {
+  color: #f8fafc;
+}
+
+.why-modal-body {
+  padding: 16px;
+  max-height: 70vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.why-section h5 {
+  margin: 0 0 6px 0;
+  font-size: 0.82rem;
+  color: #f8fafc;
+}
+
+.why-math-eq {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 0.85rem;
+  color: #38bdf8;
+  margin: 0 0 6px 0;
+}
+
+.why-matrix-code {
+  background: #030712;
+  border: 1px solid #1e293b;
+  padding: 8px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  margin: 0 0 6px 0;
+}
+
+.why-mapping-badge {
+  font-size: 0.76rem;
+  color: #10b981;
+}
+
+.why-bloch-coords-grid {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: #030712;
+  border: 1px solid #1e293b;
+  padding: 10px;
+  border-radius: 6px;
+}
+
+.bloch-coord-box {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.bloch-coord-box h6 {
+  margin: 0 0 4px 0;
+  font-size: 0.72rem;
+  color: #e2e8f0;
+}
+
+.bloch-coord-box.transformed h6 {
+  color: #38bdf8;
+}
+
+.bloch-arrow {
+  font-size: 1.2rem;
+  color: #38bdf8;
+}
+
+.why-phys-desc {
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.why-modal-footer {
+  padding: 10px 16px;
+  background: #0f172a;
+  border-top: 1px solid #1e293b;
+  text-align: right;
+}
+
+/* ─── Phase 114-122 Live Bloch Dynamics Laboratory Styles ──────────────────── */
+.live-animation-dock {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #090d16;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  gap: 12px;
+}
+
+.anim-transport-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-anim-ctrl {
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #e2e8f0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-anim-ctrl:hover {
+  background: #1e293b;
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+.btn-anim-ctrl.btn-play {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #0369a1;
   font-weight: bold;
+}
+
+.btn-anim-ctrl.btn-play.playing {
+  background: #f43f5e;
+  border-color: #e11d48;
+}
+
+.anim-scrubber-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.time-val-label, .time-end-label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: #38bdf8;
+  font-weight: bold;
+  min-width: 45px;
+}
+
+.anim-scrubber-slider {
+  flex: 1;
+  accent-color: #38bdf8;
+  cursor: pointer;
+}
+
+.anim-mode-toggles {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.anim-select-sm {
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #cbd5e1;
+  font-size: 0.7rem;
+  padding: 3px 6px;
+  border-radius: 4px;
+}
+
+.mode-btn-group {
+  display: flex;
+  gap: 2px;
+  background: #0b1329;
+  border: 1px solid #1e293b;
+  border-radius: 4px;
+  padding: 2px;
+}
+
+.btn-mode-xs {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.btn-mode-xs.active {
+  background: #1e293b;
+  color: #38bdf8;
+}
+
+.live-numerical-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: #0b1329;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+}
+
+.live-readout-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.readout-lbl {
+  color: #94a3b8;
+}
+
+.readout-val.psi-ket-val {
+  color: #38bdf8;
+  font-weight: bold;
+}
+
+.readout-val.bloch-val {
+  color: #10b981;
+}
+
+.readout-val.angle-val {
+  color: #fbbf24;
+}
+
+/* ─── Phase 124-134 On-Demand Experiment Workflow Styles ───────────────────── */
+.flow-badge-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-badge {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: bold;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.3px;
+}
+
+.status-badge.dirty {
+  background: #451a03;
+  color: #fde047;
+  border: 1px solid #78350f;
+}
+
+.status-badge.ready {
+  background: #064e3b;
+  color: #6ee7b7;
+  border: 1px solid #047857;
+}
+
+.status-badge.simulating {
+  background: #1e3a8a;
+  color: #93c5fd;
+  border: 1px solid #1d4ed8;
+}
+
+.status-badge.playing {
+  background: #0369a1;
+  color: #7dd3fc;
+  border: 1px solid #0284c7;
+}
+
+.status-badge.paused {
+  background: #581c87;
+  color: #f0abfc;
+  border: 1px solid #7e22ce;
+}
+
+.btn-run-gate-explicit.dirty-highlight {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
+  border-color: #f59e0b !important;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4) !important;
+  animation: pulseDirty 2s infinite ease-in-out;
+}
+
+@keyframes pulseDirty {
+  0%, 100% { box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); }
+  50% { box-shadow: 0 6px 18px rgba(245, 158, 11, 0.6); }
+}
+
+/* ─── Panel Bloch Wrapper & Canvas Container Sizing ────────────────────── */
+.panel-bloch-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  background: #030509;
+}
+
+.bloch-container {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.bloch-canvas-mount {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.bloch-canvas-mount canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+.bloch-axis-legend-overlay {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  background: rgba(3, 7, 18, 0.75);
+  backdrop-filter: blur(4px);
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  z-index: 10;
+
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.axis-legend-title {
+  color: #f8fafc;
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+
+.axis-legend-item.cyan { color: #38bdf8; }
+.axis-legend-item.yellow { color: #fbbf24; }
+.axis-legend-item.green { color: #10b981; }
+
+.bloch-pure-state-overlay {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: rgba(3, 7, 18, 0.75);
+  backdrop-filter: blur(4px);
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.pure-tag {
+  background: #0f2b48;
+  color: #38bdf8;
+  font-weight: bold;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 0.6rem;
+}
+
+.purity-val {
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.bloch-bottom-info-overlay {
+  position: absolute;
+  bottom: 10px;
+  left: 12px;
+  right: 12px;
+  background: rgba(3, 7, 18, 0.75);
+  backdrop-filter: blur(4px);
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: #cbd5e1;
+  z-index: 10;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.state-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px !important;
+}
+
+.card-check-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 14px;
+  height: 14px;
+  background: #10b981;
+  color: #000000;
+  font-weight: bold;
+  border-radius: 50%;
+  font-size: 0.55rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.state-card-content {
+  display: flex;
+  flex-direction: column;
 }
 
 

@@ -38,7 +38,7 @@ export const StateSummaryStrip: React.FC<StateSummaryStripProps> = ({
   const theta = bv ? (Math.acos(Math.max(-1, Math.min(1, bv.z / (r || 1)))) * 180) / Math.PI : 0;
   const phi = bv ? (Math.atan2(bv.y, bv.x) * 180) / Math.PI : 0;
 
-  const activeGateQubits = stepData.gate ? stepData.gate.qubits : [];
+  const activeGateQubits = (stepData.gate && Array.isArray(stepData.gate.qubits)) ? stepData.gate.qubits : [];
 
   return (
     <>

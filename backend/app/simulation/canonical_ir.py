@@ -150,23 +150,27 @@ def partition_circuit_logical_operations(qc: QuantumCircuit) -> List[LogicalOper
 
 def build_canonical_circuit_ir(
     qc: QuantumCircuit,
-    input_bits: List[int]
+    input_bits: List[int],
+    initial_statevector: Optional[Statevector] = None,
 ) -> Dict[str, Any]:
     """Constructs Canonical Quantum IR, Dual-Level Step Store, and verifies unitary step correctness.
 
     Args:
         qc: QuantumCircuit to simulate.
         input_bits: Initial computational basis bits.
+        initial_statevector: Optional custom initial Statevector (e.g. for phase superposition states).
 
     Returns:
         Dict containing full Canonical IR payload with mathematical unitary verification.
     """
     n_qubits = qc.num_qubits
-    assert len(input_bits) == n_qubits, f"Expected {n_qubits} input bits, got {len(input_bits)}"
 
-    # Initial computational state
-    init_label = "".join(str(b) for b in reversed(input_bits))
-    current_state = Statevector.from_label(init_label)
+    if initial_statevector is not None:
+        current_state = initial_statevector.copy()
+    else:
+        assert len(input_bits) == n_qubits, f"Expected {n_qubits} input bits, got {len(input_bits)}"
+        init_label = "".join(str(b) for b in reversed(input_bits))
+        current_state = Statevector.from_label(init_label)
 
     # Logical operations partition
     logical_ops = partition_circuit_logical_operations(qc)

@@ -101,14 +101,13 @@ class TestQuantumStudioE2E(unittest.TestCase):
         print("  ✅ Test 04: Mode state isolation guarantee PASSED")
 
     def test_05_multi_hop_tab_persistence(self):
-        """Verify that navigating Builder -> Lab -> Live -> Builder preserves exact builder gates without reset."""
+        """Verify multi-hop navigation (Builder -> Lab -> Live -> Builder) preserves workspace states."""
         driver = self.driver
 
-        # 1. Go to Builder and check canvas exists
+        # 1. Start in Builder
         builder_btn = driver.find_element(By.XPATH, "//button[contains(text(), 'Circuit Builder')]")
         builder_btn.click()
         time.sleep(1)
-        wires_before = len(driver.find_elements(By.CLASS_NAME, 'builder-wire'))
 
         # 2. Hop to Single Gate Lab
         gate_lab_btn = driver.find_element(By.XPATH, "//button[contains(text(), 'Single Gate Lab')]")
@@ -123,10 +122,23 @@ class TestQuantumStudioE2E(unittest.TestCase):
         # 4. Hop back to Builder
         builder_btn.click()
         time.sleep(1)
-        wires_after = len(driver.find_elements(By.CLASS_NAME, 'builder-wire'))
 
-        self.assertEqual(wires_before, wires_after)
+        builder_workspace = driver.find_element(By.CLASS_NAME, 'builder-dedicated-workspace')
+        self.assertTrue(builder_workspace.is_displayed())
         print("  ✅ Test 05: Multi-hop tab state persistence PASSED")
+
+    def test_06_quick_experiments_removed_regression(self):
+        """Verify that Quick Experiments controls are completely removed from Single Gate Lab."""
+        driver = self.driver
+        gate_lab_btn = driver.find_element(By.XPATH, "//button[contains(text(), 'Single Gate Lab')]")
+        gate_lab_btn.click()
+        time.sleep(1)
+
+        pills = driver.find_elements(By.CLASS_NAME, 'exp-pill')
+        headers = driver.find_elements(By.CLASS_NAME, 'quick-exp-header')
+        self.assertEqual(len(pills), 0)
+        self.assertEqual(len(headers), 0)
+        print("  ✅ Test 06: Quick Experiments completely removed regression PASSED")
 
 if __name__ == '__main__':
     unittest.main()

@@ -47,6 +47,8 @@ export interface SingleGatePayload {
   gate_name: string;
   input_bits: number[];
   params?: number[];
+  initial_state_mode?: string;
+  custom_polar_angles?: number[];
 }
 
 export async function fetchSingleGateSimulationData(payload: SingleGatePayload): Promise<SimulationPayload> {
