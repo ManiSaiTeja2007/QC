@@ -54,6 +54,12 @@ export const Header: React.FC<HeaderProps> = ({
           >
             ⚡ Live Simulation
           </button>
+          <button
+            className={`btn btn-xs ${appMode === 'qml-lab' ? 'active' : ''}`}
+            onClick={() => onModeChange('qml-lab')}
+          >
+            🧠 QML Lab (PennyLane)
+          </button>
         </div>
 
         {appMode === 'live-simulation' && (

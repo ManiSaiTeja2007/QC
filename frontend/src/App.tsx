@@ -4,8 +4,9 @@ import { StudioMode } from './types/mode';
 import { BuilderWorkspace } from './components/builder/BuilderWorkspace';
 import { SingleGateWorkspace } from './components/builder/SingleGateWorkspace';
 import { LiveSimulationWorkspace } from './components/workspaces/LiveSimulationWorkspace';
+import { QMLLabWorkspace } from './components/qml/QMLLabWorkspace';
 
-const VALID_MODES: StudioMode[] = ['builder', 'single-gate-lab', 'live-simulation'];
+const VALID_MODES: StudioMode[] = ['builder', 'single-gate-lab', 'live-simulation', 'qml-lab'];
 
 function getInitialMode(): StudioMode {
   // 1. Check URL hash (e.g. #single-gate-lab, #live-simulation, #builder)
@@ -103,6 +104,13 @@ export const App: React.FC = () => {
           onSynthChange={setSynthesis}
           onPresetChange={setPreset}
         />
+      </div>
+
+      <div
+        className="workspace-tab-container"
+        style={{ display: appMode === 'qml-lab' ? 'flex' : 'none', flex: 1, minHeight: 0 }}
+      >
+        <QMLLabWorkspace />
       </div>
     </div>
   );

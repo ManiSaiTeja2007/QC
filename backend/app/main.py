@@ -14,6 +14,17 @@ if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
 from backend.app.schemas.simulation import SimulationRequest, CustomCircuitRequest, SingleGateRequest
+from backend.app.schemas.qml import (
+    StateOptimizationRequest,
+    StateOptimizationResponse,
+    VQCTrainRequest,
+    VQCTrainResponse,
+)
+from backend.app.qml.variational_engine import (
+    get_pennylane_info,
+    optimize_quantum_state,
+    train_variational_classifier,
+)
 from backend.app.gates.basic_gates import build_fredkin_circuit
 from backend.app.modules.falfg import build_falfg_clifford_t, build_falfg_ncv
 from backend.app.modules.one_bit_alu import (
@@ -278,6 +289,34 @@ def simulate_single_gate(req: SingleGateRequest):
     ir_payload["metrics"] = metrics
 
     return ir_payload
+
+
+# ==============================================================================
+# 🧠 PennyLane Quantum Machine Learning (QML) & Variational API
+# ==============================================================================
+
+@app.get("/api/qml/info")
+def qml_info():
+    """Returns PennyLane runtime version, devices, optimizers, and ansatz capabilities."""
+    return get_pennylane_info()
+
+
+@app.post("/api/qml/optimize-state", response_model=StateOptimizationResponse)
+def api_optimize_state(req: StateOptimizationRequest):
+    """Executes PennyLane variational quantum state fitting via automatic differentiation."""
+    try:
+        return optimize_quantum_state(req)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"PennyLane state optimization failed: {str(e)}")
+
+
+@app.post("/api/qml/train-vqc", response_model=VQCTrainResponse)
+def api_train_vqc(req: VQCTrainRequest):
+    """Trains a Variational Quantum Classifier (QNN) using PennyLane autograd."""
+    try:
+        return train_variational_classifier(req)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"PennyLane VQC training failed: {str(e)}")
 
 
 # Serve static files if directory exists
