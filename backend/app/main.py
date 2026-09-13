@@ -34,14 +34,25 @@ from backend.app.modules.one_bit_alu import (
     ALU_ARITHMETIC_OPERATIONS,
 )
 from backend.app.modules.uncomputation import build_uncomputed_adder_subtractor
+from contextlib import asynccontextmanager
 from backend.app.core.canonical_ir import build_canonical_circuit_ir
 from backend.app.core.cost_metrics import analyze_circuit_cost
+from backend.app.api.circuits import router as circuits_router
+from backend.app.core.circuit_cache import hot_boot_caches
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan context manager: hot-boots in-memory circuit caches."""
+    hot_boot_caches()
+    yield
 
 
 app = FastAPI(
     title="Quantum ALU 3D Studio Modular Backend API",
     description="Research-grade Quantum Canonical IR, Dual-Level Step Store, and Unitary Verification Engine",
     version="3.0.0",
+    lifespan=lifespan,
 )
 
 # Enable CORS for React frontend (Vite port 5173 / 8502)
@@ -52,6 +63,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount Circuit Storage & Library API Router
+app.include_router(circuits_router, prefix="/api/circuits", tags=["circuits"])
+
+# Also initialize immediately on module import for tests and scripts
+hot_boot_caches()
 
 
 @app.get("/api/health")

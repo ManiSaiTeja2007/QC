@@ -840,16 +840,24 @@ select:hover {
 }
 
 .builder-cell {
-  fill: transparent;
+  fill: rgba(0, 0, 0, 0.001);
   stroke: transparent;
   cursor: pointer;
   rx: 4px;
+  pointer-events: all;
 }
 
+.builder-cell:hover,
 .builder-cell.droppable:hover {
   fill: rgba(56, 189, 248, 0.15);
   stroke: #38bdf8;
   stroke-dasharray: 2 2;
+}
+
+.builder-cell.drag-hover {
+  fill: rgba(56, 189, 248, 0.25);
+  stroke: #38bdf8;
+  stroke-width: 1.5;
 }
 
 .builder-gate-box {

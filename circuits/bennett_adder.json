@@ -1,0 +1,523 @@
+{
+  "schema_version": "1.0",
+  "id": "bennett_adder",
+  "name": "Bennett Uncomputed Adder",
+  "description": "Garbage-free uncomputed Full Adder/Subtractor with dual Feynman parity copy registers.",
+  "category": "Arithmetic",
+  "num_qubits": 9,
+  "qubit_names": [
+    "Q0 A",
+    "Q1 B",
+    "Q2 Cin",
+    "Q3 Sel",
+    "Q4 Mode",
+    "Q5 Cout",
+    "Q6 Sum",
+    "Q7 Cout'",
+    "Q8 Sum'"
+  ],
+  "default_input_bits": [
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "synthesis": "clifford_t",
+  "readonly": true,
+  "gates": [
+    {
+      "name": "CX",
+      "qubits": [
+        0,
+        1
+      ],
+      "params": null,
+      "step": 1
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        3,
+        0
+      ],
+      "params": null,
+      "step": 2
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        1,
+        3
+      ],
+      "params": null,
+      "step": 3
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        2,
+        1
+      ],
+      "params": null,
+      "step": 4
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        1,
+        4
+      ],
+      "params": null,
+      "step": 5
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        0,
+        4
+      ],
+      "params": null,
+      "step": 6
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        0,
+        2
+      ],
+      "params": null,
+      "step": 7
+    },
+    {
+      "name": "H",
+      "qubits": [
+        0
+      ],
+      "params": null,
+      "step": 8
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        0,
+        2
+      ],
+      "params": null,
+      "step": 9
+    },
+    {
+      "name": "T",
+      "qubits": [
+        0
+      ],
+      "params": null,
+      "step": 10
+    },
+    {
+      "name": "TDG",
+      "qubits": [
+        2
+      ],
+      "params": null,
+      "step": 11
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        0,
+        2
+      ],
+      "params": null,
+      "step": 12
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        3,
+        0
+      ],
+      "params": null,
+      "step": 13
+    },
+    {
+      "name": "TDG",
+      "qubits": [
+        0
+      ],
+      "params": null,
+      "step": 14
+    },
+    {
+      "name": "T",
+      "qubits": [
+        2
+      ],
+      "params": null,
+      "step": 15
+    },
+    {
+      "name": "T",
+      "qubits": [
+        3
+      ],
+      "params": null,
+      "step": 16
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        2,
+        0
+      ],
+      "params": null,
+      "step": 17
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        3,
+        2
+      ],
+      "params": null,
+      "step": 18
+    },
+    {
+      "name": "T",
+      "qubits": [
+        0
+      ],
+      "params": null,
+      "step": 19
+    },
+    {
+      "name": "TDG",
+      "qubits": [
+        2
+      ],
+      "params": null,
+      "step": 20
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        2,
+        0
+      ],
+      "params": null,
+      "step": 21
+    },
+    {
+      "name": "H",
+      "qubits": [
+        0
+      ],
+      "params": null,
+      "step": 22
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        0,
+        2
+      ],
+      "params": null,
+      "step": 23
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        3,
+        2
+      ],
+      "params": null,
+      "step": 24
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        0,
+        5
+      ],
+      "params": null,
+      "step": 25
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        0,
+        7
+      ],
+      "params": null,
+      "step": 26
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        1,
+        6
+      ],
+      "params": null,
+      "step": 27
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        1,
+        8
+      ],
+      "params": null,
+      "step": 28
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        3,
+        2
+      ],
+      "params": null,
+      "step": 29
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        0,
+        2
+      ],
+      "params": null,
+      "step": 30
+    },
+    {
+      "name": "H",
+      "qubits": [
+        0
+      ],
+      "params": null,
+      "step": 31
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        2,
+        0
+      ],
+      "params": null,
+      "step": 32
+    },
+    {
+      "name": "T",
+      "qubits": [
+        2
+      ],
+      "params": null,
+      "step": 33
+    },
+    {
+      "name": "TDG",
+      "qubits": [
+        0
+      ],
+      "params": null,
+      "step": 34
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        3,
+        2
+      ],
+      "params": null,
+      "step": 35
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        2,
+        0
+      ],
+      "params": null,
+      "step": 36
+    },
+    {
+      "name": "TDG",
+      "qubits": [
+        3
+      ],
+      "params": null,
+      "step": 37
+    },
+    {
+      "name": "TDG",
+      "qubits": [
+        2
+      ],
+      "params": null,
+      "step": 38
+    },
+    {
+      "name": "T",
+      "qubits": [
+        0
+      ],
+      "params": null,
+      "step": 39
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        3,
+        0
+      ],
+      "params": null,
+      "step": 40
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        0,
+        2
+      ],
+      "params": null,
+      "step": 41
+    },
+    {
+      "name": "T",
+      "qubits": [
+        2
+      ],
+      "params": null,
+      "step": 42
+    },
+    {
+      "name": "TDG",
+      "qubits": [
+        0
+      ],
+      "params": null,
+      "step": 43
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        0,
+        2
+      ],
+      "params": null,
+      "step": 44
+    },
+    {
+      "name": "H",
+      "qubits": [
+        0
+      ],
+      "params": null,
+      "step": 45
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        0,
+        2
+      ],
+      "params": null,
+      "step": 46
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        0,
+        4
+      ],
+      "params": null,
+      "step": 47
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        1,
+        4
+      ],
+      "params": null,
+      "step": 48
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        2,
+        1
+      ],
+      "params": null,
+      "step": 49
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        1,
+        3
+      ],
+      "params": null,
+      "step": 50
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        3,
+        0
+      ],
+      "params": null,
+      "step": 51
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        0,
+        1
+      ],
+      "params": null,
+      "step": 52
+    }
+  ],
+  "logical_operations": [
+    {
+      "op_id": 1,
+      "name": "Forward Compute Stage",
+      "primitive_start": 1,
+      "primitive_end": 24,
+      "num_primitive_gates": 24
+    },
+    {
+      "op_id": 2,
+      "name": "Double Feynman (F2G) Copy Stage",
+      "primitive_start": 25,
+      "primitive_end": 28,
+      "num_primitive_gates": 4
+    },
+    {
+      "op_id": 3,
+      "name": "Reverse Uncomputation Stage",
+      "primitive_start": 29,
+      "primitive_end": 52,
+      "num_primitive_gates": 24
+    }
+  ],
+  "metadata": {
+    "author": "IEEE TETC 2026",
+    "paper_reference": "Figure 9 Bennett Uncomputation",
+    "parity_preserved": true,
+    "quantum_cost": 27,
+    "t_count": 14,
+    "t_depth": 6,
+    "created_at": null,
+    "tags": [
+      "Bennett",
+      "Uncomputation",
+      "Garbage-Free",
+      "Adder",
+      "9-Qubit"
+    ]
+  }
+}

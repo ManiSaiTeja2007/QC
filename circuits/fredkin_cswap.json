@@ -1,0 +1,191 @@
+{
+  "schema_version": "1.0",
+  "id": "fredkin_cswap",
+  "name": "Fredkin CSWAP Gate",
+  "description": "3-qubit conservative reversible gate decomposed into fault-tolerant Clifford+T basis.",
+  "category": "Core Gates",
+  "num_qubits": 3,
+  "qubit_names": [
+    "Q0 Control A",
+    "Q1 Target B",
+    "Q2 Target C"
+  ],
+  "default_input_bits": [
+    1,
+    0,
+    1
+  ],
+  "synthesis": "clifford_t",
+  "readonly": true,
+  "gates": [
+    {
+      "name": "CX",
+      "qubits": [
+        2,
+        1
+      ],
+      "params": null,
+      "step": 1
+    },
+    {
+      "name": "H",
+      "qubits": [
+        2
+      ],
+      "params": null,
+      "step": 2
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        1,
+        2
+      ],
+      "params": null,
+      "step": 3
+    },
+    {
+      "name": "TDG",
+      "qubits": [
+        2
+      ],
+      "params": null,
+      "step": 4
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        0,
+        2
+      ],
+      "params": null,
+      "step": 5
+    },
+    {
+      "name": "T",
+      "qubits": [
+        2
+      ],
+      "params": null,
+      "step": 6
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        1,
+        2
+      ],
+      "params": null,
+      "step": 7
+    },
+    {
+      "name": "TDG",
+      "qubits": [
+        2
+      ],
+      "params": null,
+      "step": 8
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        0,
+        2
+      ],
+      "params": null,
+      "step": 9
+    },
+    {
+      "name": "T",
+      "qubits": [
+        1
+      ],
+      "params": null,
+      "step": 10
+    },
+    {
+      "name": "T",
+      "qubits": [
+        2
+      ],
+      "params": null,
+      "step": 11
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        0,
+        1
+      ],
+      "params": null,
+      "step": 12
+    },
+    {
+      "name": "H",
+      "qubits": [
+        2
+      ],
+      "params": null,
+      "step": 13
+    },
+    {
+      "name": "T",
+      "qubits": [
+        0
+      ],
+      "params": null,
+      "step": 14
+    },
+    {
+      "name": "TDG",
+      "qubits": [
+        1
+      ],
+      "params": null,
+      "step": 15
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        0,
+        1
+      ],
+      "params": null,
+      "step": 16
+    },
+    {
+      "name": "CX",
+      "qubits": [
+        2,
+        1
+      ],
+      "params": null,
+      "step": 17
+    }
+  ],
+  "logical_operations": [
+    {
+      "op_id": 1,
+      "name": "Fredkin CSWAP Core",
+      "primitive_start": 1,
+      "primitive_end": 17,
+      "num_primitive_gates": 17
+    }
+  ],
+  "metadata": {
+    "author": "IEEE TETC 2026",
+    "paper_reference": "Figure 2(b) Fredkin Gate",
+    "parity_preserved": true,
+    "quantum_cost": 5,
+    "t_count": 7,
+    "t_depth": 3,
+    "created_at": null,
+    "tags": [
+      "Fredkin",
+      "CSWAP",
+      "Clifford+T",
+      "Reversible",
+      "3-Qubit"
+    ]
+  }
+}

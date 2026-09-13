@@ -32,11 +32,13 @@ export const GatePalette: React.FC<GatePaletteProps> = ({
     { id: 'measurement', title: 'Measurement & Reset' },
   ] as const;
 
+  const displayGate = hoveredGate || GATE_REGISTRY.find((g) => g.name === selectedGate) || GATE_REGISTRY.find((g) => g.name === 'H') || GATE_REGISTRY[0];
+
   return (
     <aside className="builder-palette">
       <div className="palette-header">
         <h4>🎨 Gate Palette</h4>
-        <span className="subtitle">Select gate to place on circuit wire</span>
+        <span className="subtitle">Drag gate to wire or click to select</span>
       </div>
 
       <div className="palette-search">
@@ -68,8 +70,10 @@ export const GatePalette: React.FC<GatePaletteProps> = ({
                       draggable={true}
                       onDragStart={(e) => {
                         e.dataTransfer.setData('text/plain', gate.name);
+                        e.dataTransfer.setData('text', gate.name);
                         e.dataTransfer.setData('application/x-qc-gate', JSON.stringify({ name: gate.name, numQubits: gate.numQubits }));
                         e.dataTransfer.effectAllowed = 'copy';
+                        onSelectGate(gate.name);
                       }}
                       onClick={() => onSelectGate(isSelected ? null : gate.name)}
                       onMouseEnter={() => setHoveredGate(gate)}
@@ -86,14 +90,17 @@ export const GatePalette: React.FC<GatePaletteProps> = ({
         })}
       </div>
 
-      {hoveredGate && (
+      {displayGate && (
         <div className="gate-hover-inspector">
-          <div className="gate-hover-title">
-            <b>{hoveredGate.name}</b> — {hoveredGate.description}
+          <div className="gate-hover-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span>
+              <b>{displayGate.name}</b> — {displayGate.description}
+            </span>
+            <span style={{ fontSize: '0.62rem', color: '#64748b' }}>{displayGate.numQubits}Q</span>
           </div>
-          <p className="gate-hover-phys">{hoveredGate.physicalExplanation}</p>
-          {hoveredGate.matrixHtml && (
-            <pre className="gate-hover-matrix">{hoveredGate.matrixHtml}</pre>
+          <p className="gate-hover-phys">{displayGate.physicalExplanation}</p>
+          {displayGate.matrixHtml && (
+            <pre className="gate-hover-matrix">{displayGate.matrixHtml}</pre>
           )}
         </div>
       )}

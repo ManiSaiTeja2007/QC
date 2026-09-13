@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { GatePalette } from './GatePalette';
 import { CircuitCanvas, PlacedGate } from './CircuitCanvas';
 import { TransportBar } from '../TransportBar';
@@ -7,8 +7,18 @@ import { StateSummaryStrip } from '../StateSummaryStrip';
 import { BlochPanel } from '../BlochPanel';
 import { fetchCustomSimulationData } from '../../services/api';
 import { SimulationPayload } from '../../types/simulation';
+import { CircuitFileSchema } from '../../types/circuit';
+import { SaveCircuitModal } from '../modals/SaveCircuitModal';
 
-export const BuilderWorkspace: React.FC = () => {
+interface BuilderWorkspaceProps {
+  circuitToLoad?: CircuitFileSchema | null;
+  onCircuitSaved?: () => void;
+}
+
+export const BuilderWorkspace: React.FC<BuilderWorkspaceProps> = ({
+  circuitToLoad,
+  onCircuitSaved,
+}) => {
   const [numQubits, setNumQubits] = useState<number>(3);
   const [inputBits, setInputBits] = useState<number[]>([1, 0, 1]);
   const [placedGates, setPlacedGates] = useState<PlacedGate[]>([
@@ -17,6 +27,49 @@ export const BuilderWorkspace: React.FC = () => {
     { id: '3', name: 'T', qubits: [0], step: 3 },
   ]);
   const [selectedGate, setSelectedGate] = useState<string | null>(null);
+
+  // Metadata of currently loaded circuit (if loaded from Library Hub)
+  const [loadedCircuitMeta, setLoadedCircuitMeta] = useState<{
+    id: string;
+    name: string;
+    description: string;
+    category: string;
+    readonly: boolean;
+  } | null>(null);
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
+
+  // Synchronize canvas if an external circuit was loaded from the Library Hub
+  useEffect(() => {
+    if (!circuitToLoad) return;
+    const n = Math.min(10, Math.max(1, circuitToLoad.num_qubits));
+    setNumQubits(n);
+
+    if (circuitToLoad.default_input_bits && circuitToLoad.default_input_bits.length > 0) {
+      const padded = [...circuitToLoad.default_input_bits, ...Array(n).fill(0)].slice(0, n);
+      setInputBits(padded);
+    } else {
+      setInputBits(Array(n).fill(0));
+    }
+
+    const loadedGates: PlacedGate[] = circuitToLoad.gates.map((g, idx) => ({
+      id: `loaded_${idx + 1}_${Math.random().toString(36).substring(2, 6)}`,
+      name: g.name,
+      qubits: g.qubits.filter((q) => q < n),
+      params: g.params,
+      step: g.step || (idx + 1),
+    }));
+    setPlacedGates(loadedGates);
+    setSelectedQubit(0);
+
+    setLoadedCircuitMeta({
+      id: circuitToLoad.id,
+      name: circuitToLoad.name,
+      description: circuitToLoad.description,
+      category: circuitToLoad.category,
+      readonly: circuitToLoad.readonly,
+    });
+  }, [circuitToLoad]);
 
   // Embedded Simulation State
   const [simulationData, setSimulationData] = useState<SimulationPayload | null>(null);
@@ -95,28 +148,51 @@ export const BuilderWorkspace: React.FC = () => {
     };
   }, [isPlaying, simulationData, speedMs]);
 
-  // Auto-run simulation in background whenever circuit changes
+  const simulationSeqRef = useRef<number>(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Auto-run simulation with 150ms debounce and generation sequencing
   useEffect(() => {
-    let isSubscribed = true;
-    const runSimulation = async () => {
+    // Increment generation ID
+    const currentSeq = ++simulationSeqRef.current;
+
+    // Cancel prior in-flight fetch if any
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    const timer = setTimeout(async () => {
       try {
-        const data = await fetchCustomSimulationData({
-          num_qubits: numQubits,
-          input_bits: inputBits,
-          gates: placedGates.map((g) => ({ name: g.name, qubits: g.qubits })),
-          circuit_name: 'Builder Custom Circuit',
-        });
-        if (isSubscribed) {
+        const data = await fetchCustomSimulationData(
+          {
+            num_qubits: numQubits,
+            input_bits: inputBits,
+            gates: placedGates.map((g) => ({ name: g.name, qubits: g.qubits })),
+            circuit_name: 'Builder Custom Circuit',
+          },
+          controller.signal
+        );
+
+        // Ensure older response does not overwrite newer state
+        if (simulationSeqRef.current === currentSeq) {
           setSimulationData(data);
           setCurrentStep((prev) => Math.min(prev, data.total_primitive_steps));
         }
-      } catch (err) {
-        console.error('Failed to update builder simulation:', err);
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name === 'AbortError') {
+          return; // Request was aborted due to newer edit
+        }
+        if (simulationSeqRef.current === currentSeq) {
+          console.error('Failed to update builder simulation:', err);
+        }
       }
-    };
-    runSimulation();
+    }, 150);
+
     return () => {
-      isSubscribed = false;
+      clearTimeout(timer);
+      controller.abort();
     };
   }, [numQubits, inputBits, placedGates]);
 
@@ -147,8 +223,8 @@ export const BuilderWorkspace: React.FC = () => {
     });
   };
 
-  const handlePlaceGate = (qubit: number, step: number, targetQubit?: number) => {
-    const gateName = selectedGate;
+  const handlePlaceGate = (qubit: number, step: number, targetQubit?: number, specificGateName?: string) => {
+    const gateName = specificGateName || selectedGate;
     if (!gateName) return;
     const isMulti = ['CX', 'CY', 'CZ', 'CH', 'CRX', 'CRY', 'CRZ', 'SWAP', 'ISWAP', 'CCX', 'CSWAP'].includes(gateName);
     const resolvedTarget = isMulti
@@ -197,7 +273,11 @@ export const BuilderWorkspace: React.FC = () => {
           onInputBitToggle={handleBitToggle}
           onPlaceGate={handlePlaceGate}
           onRemoveGate={handleRemoveGate}
-          onClearCircuit={() => setPlacedGates([])}
+          onClearCircuit={() => {
+            setPlacedGates([]);
+            setLoadedCircuitMeta(null);
+          }}
+          onSaveToLibrary={() => setIsSaveModalOpen(true)}
         />
 
         {/* Embedded Live Simulation Section */}
@@ -250,6 +330,54 @@ export const BuilderWorkspace: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Save Circuit to Library Modal */}
+      {isSaveModalOpen && (
+        <SaveCircuitModal
+          onClose={() => setIsSaveModalOpen(false)}
+          numQubits={numQubits}
+          inputBits={inputBits}
+          placedGates={placedGates}
+          loadedMeta={loadedCircuitMeta}
+          onSavedSuccess={(saved) => {
+            setLoadedCircuitMeta({
+              id: saved.id,
+              name: saved.name,
+              description: saved.description,
+              category: saved.category,
+              readonly: false,
+            });
+            setSaveSuccessMsg(`Circuit '${saved.name}' saved to library successfully!`);
+            onCircuitSaved?.();
+            setTimeout(() => setSaveSuccessMsg(null), 4000);
+          }}
+        />
+      )}
+
+      {/* Save Feedback Banner */}
+      {saveSuccessMsg && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+            background: 'rgba(16, 185, 129, 0.95)',
+            color: '#fff',
+            padding: '10px 18px',
+            borderRadius: 8,
+            boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            fontSize: 12,
+            fontWeight: 600,
+          }}
+        >
+          <span>✅</span>
+          <span>{saveSuccessMsg}</span>
+        </div>
+      )}
     </main>
   );
 };

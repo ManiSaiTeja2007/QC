@@ -1,4 +1,10 @@
 import { SimulationPayload, SimulationRequestPayload } from '../types/simulation';
+import {
+  CircuitFileSchema,
+  CircuitIndexResponse,
+  CircuitValidationResponse,
+  CircuitUploadResponse,
+} from '../types/circuit';
 
 const API_BASE = '/api';
 
@@ -29,11 +35,15 @@ export async function fetchSimulationData(payload: SimulationRequestPayload): Pr
   return response.json();
 }
 
-export async function fetchCustomSimulationData(payload: CustomCircuitPayload): Promise<SimulationPayload> {
+export async function fetchCustomSimulationData(
+  payload: CustomCircuitPayload,
+  signal?: AbortSignal
+): Promise<SimulationPayload> {
   const response = await fetch(`${API_BASE}/simulate-custom`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
+    signal,
   });
 
   if (!response.ok) {
@@ -164,4 +174,121 @@ export async function runVqcTraining(payload: VQCTrainPayload): Promise<VQCTrain
   }
 
   return response.json();
+}
+
+// ==============================================================================
+// 📦 Quantum Circuit Hub & Storage API (/api/circuits)
+// ==============================================================================
+
+export interface CircuitQueryParams {
+  category?: string;
+  max_qubits?: number;
+  synthesis?: string;
+  search?: string;
+}
+
+export async function fetchCircuits(params?: CircuitQueryParams): Promise<CircuitIndexResponse> {
+  const query = new URLSearchParams();
+  if (params?.category) query.append('category', params.category);
+  if (params?.max_qubits) query.append('max_qubits', String(params.max_qubits));
+  if (params?.synthesis) query.append('synthesis', params.synthesis);
+  if (params?.search) query.append('search', params.search);
+
+  const qs = query.toString();
+  const url = `${API_BASE}/circuits${qs ? `?${qs}` : ''}`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to list circuits: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function fetchCircuitDetails(circuitId: string): Promise<CircuitFileSchema> {
+  const response = await fetch(`${API_BASE}/circuits/${encodeURIComponent(circuitId)}`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch circuit '${circuitId}': ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function simulateStoredCircuit(circuitId: string, inputBits?: number[]): Promise<SimulationPayload> {
+  const response = await fetch(`${API_BASE}/circuits/${encodeURIComponent(circuitId)}/simulate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ input_bits: inputBits }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: response.statusText }));
+    throw new Error(err.detail || `Simulation failed: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function validateCircuitJson(circuitData: unknown): Promise<CircuitValidationResponse> {
+  const response = await fetch(`${API_BASE}/circuits/validate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(circuitData),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: response.statusText }));
+    throw new Error(err.detail || `Validation request failed: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function uploadCircuitJson(circuitData: CircuitFileSchema): Promise<CircuitUploadResponse> {
+  const response = await fetch(`${API_BASE}/circuits/upload`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(circuitData),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: response.statusText }));
+    throw new Error(err.detail || `Upload failed: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function updateCircuitJson(circuitId: string, circuitData: CircuitFileSchema): Promise<CircuitUploadResponse> {
+  const response = await fetch(`${API_BASE}/circuits/${encodeURIComponent(circuitId)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(circuitData),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: response.statusText }));
+    throw new Error(err.detail || `Update failed: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function uploadCircuitFile(file: File): Promise<CircuitUploadResponse> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch(`${API_BASE}/circuits/upload-file`, {
+    method: 'POST',
+    body: formData,
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: response.statusText }));
+    throw new Error(err.detail || `File upload failed: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function deleteStoredCircuit(circuitId: string): Promise<{ status: string; message: string }> {
+  const response = await fetch(`${API_BASE}/circuits/${encodeURIComponent(circuitId)}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: response.statusText }));
+    throw new Error(err.detail || `Delete failed: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export function getCircuitExportUrl(circuitId: string): string {
+  return `${API_BASE}/circuits/${encodeURIComponent(circuitId)}/export`;
 }

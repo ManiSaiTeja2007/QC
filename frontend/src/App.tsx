@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Header } from './components/Header';
 import { StudioMode } from './types/mode';
 import { BuilderWorkspace } from './components/builder/BuilderWorkspace';
 import { SingleGateWorkspace } from './components/builder/SingleGateWorkspace';
 import { LiveSimulationWorkspace } from './components/workspaces/LiveSimulationWorkspace';
 import { QMLLabWorkspace } from './components/qml/QMLLabWorkspace';
+import { SidebarNav } from './components/SidebarNav';
+import { PaperModal } from './components/modals/PaperModal';
+import { DocsModal } from './components/modals/DocsModal';
+import { CircuitHubModal } from './components/modals/CircuitHubModal';
+import { CircuitFileSchema } from './types/circuit';
 
 const VALID_MODES: StudioMode[] = ['builder', 'single-gate-lab', 'live-simulation', 'qml-lab'];
 
@@ -27,13 +31,15 @@ function getInitialMode(): StudioMode {
 }
 
 export const App: React.FC = () => {
-  // App View Mode initialized with persistent state from URL Hash & LocalStorage
   const [appMode, setAppModeState] = useState<StudioMode>(getInitialMode);
-
-  // Live Simulation Presets & Architecture State
-  const [architecture, setArchitecture] = useState<string>('1-bit-alu');
-  const [synthesis, setSynthesis] = useState<string>('clifford_t');
-  const [preset, setPreset] = useState<string>('Full Adder');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // Lifted so sidebar circuit buttons can drive the workspace
+  const [selectedArch, setSelectedArch] = useState<string>('1-bit-alu');
+  const [isPaperOpen, setIsPaperOpen] = useState(false);
+  const [isDocsOpen, setIsDocsOpen] = useState(false);
+  const [isCircuitHubOpen, setIsCircuitHubOpen] = useState(false);
+  const [builderCircuitToLoad, setBuilderCircuitToLoad] = useState<CircuitFileSchema | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const handleModeChange = (mode: StudioMode) => {
     setAppModeState(mode);
@@ -44,7 +50,6 @@ export const App: React.FC = () => {
   };
 
   useEffect(() => {
-    // Synchronize browser history / URL hash changes
     const onHashChange = () => {
       const currentHash = window.location.hash.replace(/^#\/?/, '') as StudioMode;
       if (VALID_MODES.includes(currentHash)) {
@@ -52,68 +57,84 @@ export const App: React.FC = () => {
         localStorage.setItem('qc_studio_active_tab', currentHash);
       }
     };
-
-    // If URL hash is not set, initialize it with current mode
-    if (!window.location.hash) {
-      window.location.hash = `#${appMode}`;
-    }
-
+    if (!window.location.hash) window.location.hash = `#${appMode}`;
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []); // eslint-disable-line
 
   return (
     <div className="app-container">
-      {/* Top Header Mode Controller */}
-      <Header
-        appMode={appMode}
-        architecture={architecture}
-        synthesis={synthesis}
-        preset={preset}
-        onModeChange={handleModeChange}
-        onArchChange={setArchitecture}
-        onSynthChange={setSynthesis}
-        onPresetChange={setPreset}
-        onRunSimulation={() => handleModeChange('live-simulation')}
-      />
-
-      {/* Persistent Discriminated Workspaces (preserves state across mode tab switches) */}
-      <div
-        className="workspace-tab-container"
-        style={{ display: appMode === 'builder' ? 'flex' : 'none', flex: 1, minHeight: 0 }}
-      >
-        <BuilderWorkspace />
-      </div>
-
-      <div
-        className="workspace-tab-container"
-        style={{ display: appMode === 'single-gate-lab' ? 'flex' : 'none', flex: 1, minHeight: 0 }}
-      >
-        <SingleGateWorkspace />
-      </div>
-
-      <div
-        className="workspace-tab-container"
-        style={{ display: appMode === 'live-simulation' ? 'flex' : 'none', flex: 1, minHeight: 0 }}
-      >
-        <LiveSimulationWorkspace
-          architecture={architecture}
-          synthesis={synthesis}
-          preset={preset}
-          onArchChange={setArchitecture}
-          onSynthChange={setSynthesis}
-          onPresetChange={setPreset}
+      <div style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+        <SidebarNav
+          appMode={appMode}
+          collapsed={sidebarCollapsed}
+          onModeChange={handleModeChange}
+          onToggle={() => setSidebarCollapsed(c => !c)}
+          onCircuitSelect={setSelectedArch}
+          onOpenPaper={() => setIsPaperOpen(true)}
+          onOpenDocs={() => setIsDocsOpen(true)}
+          onOpenCircuitHub={() => setIsCircuitHubOpen(true)}
+          refreshTrigger={refreshTrigger}
         />
+
+        <div style={{ display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+          <div
+            className="workspace-tab-container"
+            style={{ display: appMode === 'builder' ? 'flex' : 'none', flex: 1, minHeight: 0 }}
+          >
+            <BuilderWorkspace
+              circuitToLoad={builderCircuitToLoad}
+              onCircuitSaved={() => setRefreshTrigger(t => t + 1)}
+            />
+          </div>
+
+          <div
+            className="workspace-tab-container"
+            style={{ display: appMode === 'single-gate-lab' ? 'flex' : 'none', flex: 1, minHeight: 0 }}
+          >
+            <SingleGateWorkspace />
+          </div>
+
+          <div
+            className="workspace-tab-container"
+            style={{ display: appMode === 'live-simulation' ? 'flex' : 'none', flex: 1, minHeight: 0 }}
+          >
+            <LiveSimulationWorkspace
+              initialArchitecture={selectedArch}
+              onArchChange={setSelectedArch}
+            />
+          </div>
+
+          <div
+            className="workspace-tab-container"
+            style={{ display: appMode === 'qml-lab' ? 'flex' : 'none', flex: 1, minHeight: 0 }}
+          >
+            <QMLLabWorkspace />
+          </div>
+        </div>
       </div>
 
-      <div
-        className="workspace-tab-container"
-        style={{ display: appMode === 'qml-lab' ? 'flex' : 'none', flex: 1, minHeight: 0 }}
-      >
-        <QMLLabWorkspace />
-      </div>
+      {/* Circuit Hub & Library Modal */}
+      {isCircuitHubOpen && (
+        <CircuitHubModal
+          onClose={() => setIsCircuitHubOpen(false)}
+          onSimulateCircuit={(circuitId) => {
+            setSelectedArch(circuitId);
+            handleModeChange('live-simulation');
+          }}
+          onOpenInBuilder={(circuit) => {
+            setBuilderCircuitToLoad(circuit);
+            handleModeChange('builder');
+          }}
+        />
+      )}
+
+      {/* Info Modals */}
+      {isPaperOpen && <PaperModal onClose={() => setIsPaperOpen(false)} />}
+      {isDocsOpen && <DocsModal onClose={() => setIsDocsOpen(false)} />}
     </div>
   );
 };
 
 export default App;
+

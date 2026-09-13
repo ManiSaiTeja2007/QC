@@ -1,0 +1,78 @@
+{
+  "version": "1.0",
+  "circuits": [
+    {
+      "id": "1_bit_alu_clifford_t",
+      "name": "1-Bit Quantum ALU",
+      "description": "28-operation fault-tolerant reversible Arithmetic Logic Unit based on 5x5 FALFG and Clifford+T Fredkin muxes.",
+      "category": "ALU Architectures",
+      "num_qubits": 7,
+      "num_gates": 75,
+      "synthesis": "clifford_t",
+      "readonly": true,
+      "tags": [
+        "ALU",
+        "Arithmetic",
+        "Clifford+T",
+        "Fault-Tolerant",
+        "Reversible",
+        "7-Qubit"
+      ],
+      "file_name": "1_bit_alu_clifford_t.json"
+    },
+    {
+      "id": "bennett_adder",
+      "name": "Bennett Uncomputed Adder",
+      "description": "Garbage-free uncomputed Full Adder/Subtractor with dual Feynman parity copy registers.",
+      "category": "Arithmetic",
+      "num_qubits": 9,
+      "num_gates": 52,
+      "synthesis": "clifford_t",
+      "readonly": true,
+      "tags": [
+        "Bennett",
+        "Uncomputation",
+        "Garbage-Free",
+        "Adder",
+        "9-Qubit"
+      ],
+      "file_name": "bennett_adder.json"
+    },
+    {
+      "id": "falfg_5x5",
+      "name": "5x5 FALFG Gate",
+      "description": "Fault-Tolerant Arithmetic Logic Function Generator performing Full Adder/Subtractor and 24 operations.",
+      "category": "Core Gates",
+      "num_qubits": 5,
+      "num_gates": 24,
+      "synthesis": "clifford_t",
+      "readonly": true,
+      "tags": [
+        "FALFG",
+        "Arithmetic",
+        "Clifford+T",
+        "Reversible",
+        "5-Qubit"
+      ],
+      "file_name": "falfg_5x5.json"
+    },
+    {
+      "id": "fredkin_cswap",
+      "name": "Fredkin CSWAP Gate",
+      "description": "3-qubit conservative reversible gate decomposed into fault-tolerant Clifford+T basis.",
+      "category": "Core Gates",
+      "num_qubits": 3,
+      "num_gates": 17,
+      "synthesis": "clifford_t",
+      "readonly": true,
+      "tags": [
+        "Fredkin",
+        "CSWAP",
+        "Clifford+T",
+        "Reversible",
+        "3-Qubit"
+      ],
+      "file_name": "fredkin_cswap.json"
+    }
+  ]
+}

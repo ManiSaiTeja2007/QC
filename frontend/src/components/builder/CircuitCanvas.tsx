@@ -14,9 +14,10 @@ interface CircuitCanvasProps {
   onAddQubit: () => void;
   onRemoveQubit: () => void;
   onInputBitToggle: (qIdx: number) => void;
-  onPlaceGate: (qubit: number, step: number, targetQubit?: number) => void;
+  onPlaceGate: (qubit: number, step: number, targetQubit?: number, specificGateName?: string) => void;
   onRemoveGate: (gateId: string) => void;
   onClearCircuit: () => void;
+  onSaveToLibrary?: () => void;
 }
 
 export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
@@ -30,6 +31,7 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
   onPlaceGate,
   onRemoveGate,
   onClearCircuit,
+  onSaveToLibrary,
 }) => {
   const [selectedGateId, setSelectedGateId] = useState<string | null>(null);
   const [customTargetQubit, setCustomTargetQubit] = useState<number>(1);
@@ -74,7 +76,7 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
         ? q + 1
         : q - 1
       : q;
-    onPlaceGate(q, col, targetQ);
+    onPlaceGate(q, col, targetQ, gateName);
   };
 
   return (
@@ -128,11 +130,32 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
           <button className="btn btn-xs btn-danger" onClick={onClearCircuit}>
             Clear Circuit
           </button>
+          <button
+            className="btn btn-xs"
+            onClick={onSaveToLibrary}
+            style={{
+              background: 'linear-gradient(90deg, #10b981, #059669)',
+              color: '#fff',
+              border: 'none',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+            }}
+          >
+            <span>💾</span>
+            <span>Save to Library</span>
+          </button>
         </div>
       </div>
 
-      <div className="canvas-viewport">
-        <svg className="builder-svg" width={svgWidth} height={svgHeight}>
+      <div className="canvas-viewport" onDragOver={(e) => e.preventDefault()}>
+        <svg
+          className="builder-svg"
+          width={svgWidth}
+          height={svgHeight}
+          onDragOver={(e) => e.preventDefault()}
+        >
           {/* Step Column Numbers */}
           {columns.map((col) => (
             <text
@@ -225,7 +248,10 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
                     onDrop={(e) => {
                       e.preventDefault();
                       setDragOverCell(null);
-                      const gateName = e.dataTransfer.getData('text/plain') || selectedGate;
+                      const gateName =
+                        e.dataTransfer.getData('text/plain') ||
+                        e.dataTransfer.getData('text') ||
+                        selectedGate;
                       if (gateName) {
                         handleDropGate(gateName, q, col);
                       }

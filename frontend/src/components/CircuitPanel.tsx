@@ -8,6 +8,8 @@ interface CircuitPanelProps {
   activeGateName: string;
   onSelectQubit: (qIdx: number) => void;
   onSelectStep: (stepIdx: number) => void;
+  onGateClick?: (gateName: string, qubits: number[], stepIndex: number) => void;
+  onInspectActiveGate?: () => void;
 }
 
 export const CircuitPanel: React.FC<CircuitPanelProps> = ({
@@ -17,8 +19,11 @@ export const CircuitPanel: React.FC<CircuitPanelProps> = ({
   activeGateName,
   onSelectQubit,
   onSelectStep,
+  onGateClick,
+  onInspectActiveGate,
 }) => {
   const viewportRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
     if (viewportRef.current && currentStep > 0) {
@@ -32,6 +37,100 @@ export const CircuitPanel: React.FC<CircuitPanelProps> = ({
       });
     }
   }, [currentStep]);
+
+  const getStandaloneSVGString = (): string => {
+    if (!svgRef.current) return '';
+    const svgClone = svgRef.current.cloneNode(true) as SVGSVGElement;
+    svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+    const styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+    styleEl.textContent = `
+      .circuit-svg { background: #04060b; font-family: monospace; }
+      .svg-wire { stroke: #26334d; stroke-width: 1.5; }
+      .svg-wire.selected { stroke: #38bdf8; stroke-width: 2.5; }
+      .svg-qubit-lbl { font-size: 10px; font-weight: 600; fill: #94a3b8; font-family: system-ui, sans-serif; }
+      .svg-qubit-lbl.selected { fill: #38bdf8; font-weight: 700; }
+      .svg-init-state { font-size: 9px; font-family: monospace; fill: #34d399; font-weight: 600; }
+      .svg-gate-box { fill: #172136; stroke: #3b82f6; stroke-width: 1.2; rx: 4px; }
+      .svg-gate-text { font-size: 9px; font-weight: 700; fill: #f8fafc; text-anchor: middle; dominant-baseline: central; font-family: monospace; }
+      .svg-ctrl-dot { fill: #38bdf8; stroke: #0284c7; stroke-width: 1; }
+      .svg-target-circle { fill: #080d1a; stroke: #38bdf8; stroke-width: 1.5; }
+      .svg-target-plus { stroke: #38bdf8; stroke-width: 1.5; }
+      .svg-ctrl-line { stroke: #38bdf8; stroke-width: 1.5; }
+      .svg-step-num { font-size: 8px; fill: #64748b; text-anchor: middle; font-family: monospace; }
+      .svg-step-num.active { fill: #38bdf8; font-weight: bold; }
+      .svg-active-cursor-bg { fill: rgba(56, 189, 248, 0.08); rx: 4px; }
+      .svg-active-line { stroke: #38bdf8; stroke-width: 1.5; stroke-dasharray: 2 2; }
+    `;
+    svgClone.insertBefore(styleEl, svgClone.firstChild);
+
+    const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    bgRect.setAttribute('width', '100%');
+    bgRect.setAttribute('height', '100%');
+    bgRect.setAttribute('fill', '#04060b');
+    svgClone.insertBefore(bgRect, svgClone.childNodes[1] || null);
+
+    return new XMLSerializer().serializeToString(svgClone);
+  };
+
+  const handleExportSVG = () => {
+    const svgStr = getStandaloneSVGString();
+    if (!svgStr) return;
+    const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const name = (simulationData?.circuit_name || 'quantum_circuit').toLowerCase().replace(/\s+/g, '_');
+    a.download = `${name}.svg`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportPNG = () => {
+    const svgStr = getStandaloneSVGString();
+    if (!svgStr || !svgRef.current) return;
+
+    const img = new Image();
+    const svgBlob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+
+    img.onload = () => {
+      const scale = 2;
+      const canvas = document.createElement('canvas');
+      const w = svgRef.current?.clientWidth || 800;
+      const h = svgRef.current?.clientHeight || 400;
+      canvas.width = w * scale;
+      canvas.height = h * scale;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.fillStyle = '#04060b';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.scale(scale, scale);
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+
+      const pngUrl = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = pngUrl;
+      const name = (simulationData?.circuit_name || 'quantum_circuit').toLowerCase().replace(/\s+/g, '_');
+      a.download = `${name}.png`;
+      a.click();
+    };
+    img.src = url;
+  };
+
+  const handleExportJSON = () => {
+    if (!simulationData) return;
+    const jsonStr = JSON.stringify(simulationData, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const name = (simulationData?.circuit_name || 'quantum_circuit').toLowerCase().replace(/\s+/g, '_');
+    a.download = `${name}_data.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   if (!simulationData || !simulationData.primitive_gates) {
     return (
@@ -60,13 +159,50 @@ export const CircuitPanel: React.FC<CircuitPanelProps> = ({
 
   return (
     <article className="card panel-circuit">
-      <div className="card-header">
-        <h3>⚡ Circuit Wire & Logical Operation Highlight</h3>
-        <span className="badge-gate">{activeGateName}</span>
+      <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1 }}>
+          <h3>⚡ Circuit Wire & Logical Operation Highlight</h3>
+          <span
+            className="badge-gate"
+            onClick={onInspectActiveGate}
+            style={{ cursor: onInspectActiveGate ? 'pointer' : 'default' }}
+            title={onInspectActiveGate ? "Click to inspect gate unitary & details (or double-click any gate below)" : undefined}
+          >
+            {activeGateName} {onInspectActiveGate && activeGateName !== 'INIT' ? '🔍' : ''}
+          </span>
+        </div>
+
+        {/* Circuit Export Button Group */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+          <span style={{ fontSize: '0.62rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>
+            Export:
+          </span>
+          <button
+            className="btn-xs"
+            onClick={handleExportSVG}
+            title="Download scalable vector graphic (.svg) for LaTeX/paper figures"
+          >
+            SVG
+          </button>
+          <button
+            className="btn-xs"
+            onClick={handleExportPNG}
+            title="Download high-resolution image (.png) at 2x DPI"
+          >
+            PNG
+          </button>
+          <button
+            className="btn-xs"
+            onClick={handleExportJSON}
+            title="Download circuit simulation payload (.json) for data analysis"
+          >
+            JSON
+          </button>
+        </div>
       </div>
 
       <div className="circuit-viewport" ref={viewportRef}>
-        <svg className="circuit-svg" width={svgWidth} height={svgHeight} xmlns="http://www.w3.org/2000/svg">
+        <svg ref={svgRef} className="circuit-svg" width={svgWidth} height={svgHeight} xmlns="http://www.w3.org/2000/svg">
           {/* Logical Operation Background Blocks */}
           {logicalOps.map((op) => {
             const startColX = startX + (op.primitive_start - 1) * colWidth;
@@ -155,7 +291,12 @@ export const CircuitPanel: React.FC<CircuitPanelProps> = ({
             const isSelected = stepNum === currentStep;
 
             return (
-              <g key={stepNum} onClick={() => onSelectStep(stepNum)} style={{ cursor: 'pointer' }}>
+              <g
+                key={stepNum}
+                onClick={() => onSelectStep(stepNum)}
+                onDoubleClick={() => onGateClick?.(g.name, g.qubits, stepNum)}
+                style={{ cursor: 'pointer' }}
+              >
                 <text x={colX} y={22} className={`svg-step-num ${isSelected ? 'active' : ''}`}>
                   {stepNum}
                 </text>
@@ -166,6 +307,7 @@ export const CircuitPanel: React.FC<CircuitPanelProps> = ({
                     const tY = startY + g.qubits[1] * rowHeight + rowHeight / 2;
                     return (
                       <g>
+                        <title>{g.name} — double-click for info</title>
                         <line x1={colX} y1={cY} x2={colX} y2={tY} className="svg-ctrl-line" />
                         <circle cx={colX} cy={cY} r={4} className="svg-ctrl-dot" />
                         <circle cx={colX} cy={tY} r={7} className="svg-target-circle" />
@@ -181,6 +323,7 @@ export const CircuitPanel: React.FC<CircuitPanelProps> = ({
                     const boxH = 22;
                     return (
                       <g key={q}>
+                        <title>{g.name} on {simulationData?.qubit_names?.[q] ?? `Q${q}`} — double-click for info</title>
                         <rect
                           x={colX - boxW / 2}
                           y={gY - boxH / 2}
