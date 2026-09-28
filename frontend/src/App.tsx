@@ -4,35 +4,37 @@ import { BuilderWorkspace } from './components/builder/BuilderWorkspace';
 import { SingleGateWorkspace } from './components/builder/SingleGateWorkspace';
 import { LiveSimulationWorkspace } from './components/workspaces/LiveSimulationWorkspace';
 import { QMLLabWorkspace } from './components/qml/QMLLabWorkspace';
+import { VerilogStudioWorkspace } from './components/verilog/VerilogStudioWorkspace';
 import { SidebarNav } from './components/SidebarNav';
 import { PaperModal } from './components/modals/PaperModal';
 import { DocsModal } from './components/modals/DocsModal';
 import { CircuitHubModal } from './components/modals/CircuitHubModal';
 import { CircuitFileSchema } from './types/circuit';
+import { IOContract } from './types/io_contract';
+import { circuitStore } from './services/circuitStore';
 
-const VALID_MODES: StudioMode[] = ['builder', 'single-gate-lab', 'live-simulation', 'qml-lab'];
+const VALID_MODES: StudioMode[] = [
+  'live-simulation',
+  'builder',
+  'single-gate-lab',
+  'verilog-studio',
+  'qml-lab',
+];
 
 function getInitialMode(): StudioMode {
-  // 1. Check URL hash (e.g. #single-gate-lab, #live-simulation, #builder)
   if (typeof window !== 'undefined' && window.location.hash) {
     const hash = window.location.hash.replace(/^#\/?/, '') as StudioMode;
-    if (VALID_MODES.includes(hash)) {
-      return hash;
-    }
+    if (VALID_MODES.includes(hash)) return hash;
   }
-  // 2. Check localStorage persistence
-  if (typeof window !== 'undefined' && window.localStorage) {
-    const saved = localStorage.getItem('qc_studio_active_tab') as StudioMode;
-    if (VALID_MODES.includes(saved)) {
-      return saved;
-    }
-  }
-  return 'builder';
+  const saved = localStorage.getItem('qc_studio_active_tab') as StudioMode | null;
+  if (saved && VALID_MODES.includes(saved)) return saved;
+  return 'live-simulation';
 }
 
-export const App: React.FC = () => {
+export function App() {
   const [appMode, setAppModeState] = useState<StudioMode>(getInitialMode);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // Default sidebarCollapsed to true per rule 19 for maximum spacious layout
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   // Lifted so sidebar circuit buttons can drive the workspace
   const [selectedArch, setSelectedArch] = useState<string>('1-bit-alu');
   const [isPaperOpen, setIsPaperOpen] = useState(false);
@@ -40,6 +42,13 @@ export const App: React.FC = () => {
   const [isCircuitHubOpen, setIsCircuitHubOpen] = useState(false);
   const [builderCircuitToLoad, setBuilderCircuitToLoad] = useState<CircuitFileSchema | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [activeBuilderCircuit, setActiveBuilderCircuit] = useState<{
+    name: string;
+    num_qubits: number;
+    input_bits: number[];
+    gates: Array<{ name: string; qubits: number[]; params?: number[] }>;
+  } | null>(null);
+  const [ioContract, setIoContract] = useState<IOContract | null>(null);
 
   const handleModeChange = (mode: StudioMode) => {
     setAppModeState(mode);
@@ -85,6 +94,9 @@ export const App: React.FC = () => {
             <BuilderWorkspace
               circuitToLoad={builderCircuitToLoad}
               onCircuitSaved={() => setRefreshTrigger(t => t + 1)}
+              onCircuitChange={setActiveBuilderCircuit}
+              ioContract={ioContract}
+              onIOContractChange={setIoContract}
             />
           </div>
 
@@ -102,6 +114,18 @@ export const App: React.FC = () => {
             <LiveSimulationWorkspace
               initialArchitecture={selectedArch}
               onArchChange={setSelectedArch}
+              onNavigateToVerilogStudio={() => handleModeChange('verilog-studio')}
+            />
+          </div>
+
+          <div
+            className="workspace-tab-container"
+            style={{ display: appMode === 'verilog-studio' ? 'flex' : 'none', flex: 1, minHeight: 0 }}
+          >
+            <VerilogStudioWorkspace
+              builderCircuit={activeBuilderCircuit}
+              ioContract={ioContract}
+              onIOContractChange={setIoContract}
             />
           </div>
 

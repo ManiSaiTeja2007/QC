@@ -95,5 +95,63 @@ This living reference document catalogs all public classes, functions, schemas, 
 | [`circuit_cache`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/core/circuit_cache.py#L178) | Singleton (`CircuitCacheManager`) | Global singleton cache instance used across FastAPI application. |
 | [`hot_boot_caches`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/core/circuit_cache.py#L181-L203) | Function | Preloads catalog and immutable built-in circuits into RAM at application startup. |
 
+---
+
+## 6. Canonical Verification Contract & Schemas (`backend/app/schemas/verification_contract.py`)
+
+| Symbol | Type | Description |
+|---|---|---|
+| [`Endianness`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/schemas/verification_contract.py#L8-L16) | Enum (`str`) | Bit order convention (`little_endian` vs `big_endian`). |
+| [`PortDirection`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/schemas/verification_contract.py#L19-L21) | Enum (`str`) | Port direction (`input`, `output`). |
+| [`PortMapping`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/schemas/verification_contract.py#L24-L44) | Pydantic Model | Mapping between Verilog port and physical quantum circuit qubits. |
+| [`AncillaContract`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/schemas/verification_contract.py#L47-L51) | Pydantic Model | Contract for ancilla uncomputation check back to clean state. |
+| [`VerificationMode`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/schemas/verification_contract.py#L54-L56) | Enum (`str`) | Simulation mode (`statevector_ideal` vs `shot_measurement`). |
+| [`ExecutionEngineStatus`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/schemas/verification_contract.py#L59-L65) | Enum (`str`) | Engine status codes (`iverilog_success`, `compilation_error`, `simulation_timeout`, etc.). |
+| [`VerificationContract`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/schemas/verification_contract.py#L72-L105) | Pydantic Model | Canonical verification contract defining Verilog golden source, provenance, and port maps. |
+| [`TruthTableRow`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/schemas/verification_contract.py#L112-L125) | Pydantic Model | Row in the differential verification truth table. |
+| [`BoxPlotStats`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/schemas/verification_contract.py#L127-L135) | Pydantic Model | Five-number summary + IQR for fidelity box plot. |
+| [`HeatmapData`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/schemas/verification_contract.py#L137-L142) | Pydantic Model | 2D matrix of bitwise errors across input states and output bits. |
+| [`HistogramEntry`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/schemas/verification_contract.py#L144-L149) | Pydantic Model | Probability comparison entry between Verilog and Quantum. |
+| [`VerificationResult`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/schemas/verification_contract.py#L151-L176) | Pydantic Model | Comprehensive verification result payload returned by comparator with provenance metadata. |
+| [`ClassicalGateType`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/schemas/classical_netlist.py#L13-L22) | Enum | Classical gate types (`AND`, `OR`, `NAND`, `NOR`, `XOR`, `XNOR`, `NOT`, `BUFFER`). |
+| [`ClassicalGateInstance`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/schemas/classical_netlist.py#L24-L48) | Pydantic Model | Gate block instance with structural fan-in $N \ge 2$, inputs, and output net. |
+| [`PortPin`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/schemas/classical_netlist.py#L50-L62) | Pydantic Model | Boundary port pin mapping to net IDs. |
+| [`ClassicalNetlist`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/schemas/classical_netlist.py#L64-L318) | Pydantic Model | Canonical structural netlist IR with combinational loop detection, local Boolean evaluation, and Verilog generation. |
+
+---
+
+## 7. Verilog Simulation & Cross-Checking Engines
+
+| Symbol | File | Type | Description |
+|---|---|---|---|
+| [`simulate_verilog`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/simulation/verilog_engine.py#L170-L314) | `verilog_engine.py` | Function | Compiles and simulates Verilog code using Icarus Verilog (`iverilog` + `vvp`) over all $2^k$ states. |
+| [`generate_testbench`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/simulation/verilog_engine.py#L68-L168) | `verilog_engine.py` | Function | Synthesizes an exhaustive testbench driving all $2^k$ input combinations. |
+| [`get_verilog_template`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/core/verilog_generator.py#L190-L192) | `verilog_generator.py` | Function | Retrieves curated golden Verilog reference templates (AND, Adder, FALFG, ALU). |
+| [`export_circuit_to_verilog`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/core/verilog_generator.py#L210-L245) | `verilog_generator.py` | Function | Generates synthesizable Verilog module for inspection / export. |
+| [`run_quantum_verification_for_state`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/simulation/quantum_verifier.py#L140-L278) | `quantum_verifier.py` | Function | Simulates quantum circuit for a basis state and computes state fidelity. |
+| [`compute_box_plot_statistics`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/simulation/equivalence_metrics.py#L31-L51) | `equivalence_metrics.py` | Function | Calculates Min, $Q_1$, Median, $Q_3$, Max, and IQR. |
+| [`run_full_verification`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/simulation/equivalence_metrics.py#L90-L284) | `equivalence_metrics.py` | Function | Coordinates netlist validation, self-consistency check, Verilog execution, quantum simulation, and differential comparison. |
+| [`router`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/api/verilog_verify.py#L42) | `verilog_verify.py` | APIRouter | REST router mounted at `/api/verilog` for templates, simulation, and verification. |
+
+---
+
+## 8. Frontend Verilog & Analytics Components
+
+| Component | File | Description |
+|---|---|---|
+| [`VerilogStudioWorkspace`](file:///home/mani/WorkSpace/VLSI/QC/frontend/src/components/verilog/VerilogStudioWorkspace.tsx) | `VerilogStudioWorkspace.tsx` | First-class dedicated workspace for classical schematic design, Verilog synthesis, and quantum equivalence verification. |
+| [`SchematicCanvas`](file:///home/mani/WorkSpace/VLSI/QC/frontend/src/components/verilog/SchematicCanvas.tsx) | `SchematicCanvas.tsx` | Logisim-style SVG schematic editor with gate pallet, wire routing, interactive input toggling, and live signal propagation. |
+| [`evaluateSchematic`](file:///home/mani/WorkSpace/VLSI/QC/frontend/src/services/schematicEvaluator.ts) | `schematicEvaluator.ts` | Deterministic browser-side logic evaluator with DFS cycle detection. |
+| [`convertSchematicToCanonicalNetlist`](file:///home/mani/WorkSpace/VLSI/QC/frontend/src/services/schematicToNetlist.ts) | `schematicToNetlist.ts` | Translates visual schematic graph into Canonical ClassicalNetlist IR. |
+| [`generateVerilogFromNetlist`](file:///home/mani/WorkSpace/VLSI/QC/frontend/src/services/schematicToNetlist.ts) | `schematicToNetlist.ts` | Synthesizes clean, human-readable Verilog HDL from netlist. |
+| [`TruthTableMatrix`](file:///home/mani/WorkSpace/VLSI/QC/frontend/src/components/verilog/TruthTableMatrix.tsx) | `TruthTableMatrix.tsx` | Exhaustive truth table matrix with mismatch filtering and fidelity badges. |
+| [`ErrorHeatmap`](file:///home/mani/WorkSpace/VLSI/QC/frontend/src/components/verilog/ErrorHeatmap.tsx) | `ErrorHeatmap.tsx` | 2D SVG heatmap grid mapping basis states against output bit error indicators. |
+| [`StateFidelityCurve`](file:///home/mani/WorkSpace/VLSI/QC/frontend/src/components/verilog/StateFidelityCurve.tsx) | `StateFidelityCurve.tsx` | Dedicated state-by-state quantum fidelity curve across all computational basis states. |
+| [`FidelityDistributionBoxPlot`](file:///home/mani/WorkSpace/VLSI/QC/frontend/src/components/verilog/FidelityDistributionBoxPlot.tsx) | `FidelityDistributionBoxPlot.tsx` | Five-number summary box-and-whisker plot displaying quartile distributions and IQR. |
+| [`StateHistogram`](file:///home/mani/WorkSpace/VLSI/QC/frontend/src/components/verilog/StateHistogram.tsx) | `StateHistogram.tsx` | Side-by-side probability bars comparing Verilog reference against quantum measurements. |
+| [`PortMappingConfig`](file:///home/mani/WorkSpace/VLSI/QC/frontend/src/components/verilog/PortMappingConfig.tsx) | `PortMappingConfig.tsx` | Canonical contract configurator for ports, qubit indices, and ancilla clean checks. |
+| [`VerilogSubPanel`](file:///home/mani/WorkSpace/VLSI/QC/frontend/src/components/builder/VerilogSubPanel.tsx) | `VerilogSubPanel.tsx` | Integrated verification studio sub-view embedded into Circuit Builder workspace. |
+
+
 
 

@@ -1,0 +1,169 @@
+direction: down
+theme: 200
+
+classes: {
+  subsystem: {
+    style.fill: "#0b1120"
+    style.stroke: "#1e293b"
+    style.stroke-width: 2
+    style.border-radius: 10
+  }
+  ui_card: {
+    style.fill: "#1e293b"
+    style.stroke: "#38bdf8"
+    style.stroke-width: 2
+    style.border-radius: 6
+    style.font-color: "#f8fafc"
+  }
+  verilog_card: {
+    style.fill: "#1e293b"
+    style.stroke: "#f59e0b"
+    style.stroke-width: 2
+    style.border-radius: 6
+    style.font-color: "#f8fafc"
+  }
+  quantum_card: {
+    style.fill: "#1e293b"
+    style.stroke: "#818cf8"
+    style.stroke-width: 2
+    style.border-radius: 6
+    style.font-color: "#f8fafc"
+  }
+  comparator_card: {
+    style.fill: "#1e293b"
+    style.stroke: "#ec4899"
+    style.stroke-width: 2
+    style.border-radius: 6
+    style.font-color: "#f8fafc"
+  }
+  analytics_card: {
+    style.fill: "#1e293b"
+    style.stroke: "#34d399"
+    style.stroke-width: 2
+    style.border-radius: 6
+    style.font-color: "#f8fafc"
+  }
+  storage_card: {
+    shape: cylinder
+    style.fill: "#1e293b"
+    style.stroke: "#94a3b8"
+    style.stroke-width: 2
+    style.font-color: "#f8fafc"
+  }
+}
+
+# ==========================================
+# 1. FRONTEND USER INTERACTION LAYER
+# ==========================================
+studio_ui: "Quantum ALU Studio Frontend (React + Vite + Three.js)" {
+  class: subsystem
+
+  builder_workspace: "Circuit Builder & Live Simulation Workspace" {
+    class: ui_card
+    canvas: "Quantum Circuit Canvas\n(Arbitrary Wires, Qubits, Gates: Toffoli, CNOT, T)"
+    sub_toggle: "Verilog Mode Sub-Panel Toggle\n(Direct sub-view inside Circuit Builder)"
+  }
+
+  verilog_gui: "Integrated Verilog Sub-Panel / GUI" {
+    class: verilog_card
+    v_editor: "Verilog Module View & Editor\n(Syntax Highlighted, Templates: AND, Adder, ALU)"
+    v_pin_map: "Port-to-Qubit Mapping Configurator\n(Inputs: A, B -> Q0, Q1 | Outputs: Y -> Q2)"
+    auto_synth_btn: "Auto-Derive from Quantum Circuit"
+  }
+
+  analytics_dash: "Equivalence Analytics Dashboard" {
+    class: analytics_card
+    heatmap_view: "2D Error & Mismatch Heatmap\n(Input States vs Output Bit Positions)"
+    histogram_view: "Probability Comparison Histograms\n(Golden Verilog 1.0 vs Quantum Measurement)"
+    fidelity_view: "Quantum State Fidelity Curve\n(F(x) across 2^k computational basis states)"
+    box_plot_view: "Statistical Box Plot\n(Min, Q1, Median, Q3, Max, IQR of Fidelities)"
+    discrepancy_table: "Interactive Truth Table Matrix\n(Filter by Mismatches, Parity Check)"
+  }
+
+  dual_export_btn: "Dual Circuit Exporter\n(Quantum JSON/QASM + Verilog .v / _tb.v)" {
+    class: ui_card
+  }
+}
+
+# ==========================================
+# 2. BACKEND VERIFICATION & SIMULATION CORE
+# ==========================================
+backend_engine: "FastAPI Backend Modular Services" {
+  class: subsystem
+
+  v_router: "/api/verilog Router" {
+    class: ui_card
+  }
+
+  v_translator: "Quantum-to-Verilog Synthesizer (verilog_generator.py)" {
+    class: verilog_card
+    desc: |md
+      Extracts reversible logic truth table and generates synthesizable
+      Verilog module (`assign` logic / behavioral `case`) + testbench
+    |
+  }
+
+  # Golden Classical Reference Path
+  verilog_subsystem: "Classical Golden Reference Engine (verilog_engine.py)" {
+    class: verilog_card
+    compiler: "Icarus Verilog Compiler (`iverilog`)\n+ Fast Python Combinational Evaluator"
+    simulator: "Simulation Runtime (`vvp`)\nExecutes testbench over all 2^k test vectors"
+    golden_data: "Golden Reference Truth Table\nOutputs: Y_ref(x) for all x in {0,1}^k"
+    compiler -> simulator -> golden_data
+  }
+
+  # Quantum Model Under Test Path
+  quantum_subsystem: "Quantum Execution Engine (Qiskit Aer)" {
+    class: quantum_card
+    state_prep: "Basis State Preparation (|x⟩ across input qubits)"
+    aer_sim: "AerSimulator Engine\n(Ideal Statevector + Noisy Shot Simulation)"
+    quantum_data: "Quantum Target Measurements\nOutputs: Y_quant(x) & Statevector amplitudes"
+    state_prep -> aer_sim -> quantum_data
+  }
+
+  # Differential Cross-Check & Metrics
+  comparator_core: "Differential Cross-Check Comparator (equivalence_metrics.py)" {
+    class: comparator_card
+    bitwise_diff: "Bitwise Output Matcher: Y_ref(x) == Y_quant(x)"
+    garbage_check: "Ancilla Restoration & Garbage Bit Verification"
+    fidelity_calc: "Quantum State Fidelity: F = |⟨ψ_ref|ψ_quant⟩|²"
+    stat_calc: "Statistical Aggregator (Error Rate ε, Box Plot Quartiles, Heatmap Matrix)"
+    bitwise_diff -> stat_calc
+    garbage_check -> stat_calc
+    fidelity_calc -> stat_calc
+  }
+}
+
+# ==========================================
+# 3. STORAGE & ARTIFACT LAYER
+# ==========================================
+storage: "Project Storage & Artifacts" {
+  class: subsystem
+  q_files: "Quantum Circuit Storage (circuits/*.json)" { class: storage_card }
+  v_files: "Verilog Hardware Modules (.v & _tb.v)" { class: storage_card }
+}
+
+# ==========================================
+# DATA FLOW CONNECTIONS
+# ==========================================
+
+# 1. Derivation and GUI Setup
+studio_ui.builder_workspace.canvas -> backend_engine.v_translator: "1. Quantum Circuit Definition"
+backend_engine.v_translator -> studio_ui.verilog_gui.v_editor: "2. Auto-Populate Equivalent Verilog"
+
+# 2. Trigger Cross-Check
+studio_ui.verilog_gui -> backend_engine.v_router: "3. Run Verification (Verilog Code + Pin Map)"
+backend_engine.v_router -> backend_engine.verilog_subsystem.compiler: "Compile & Run Golden Verilog"
+backend_engine.v_router -> backend_engine.quantum_subsystem.state_prep: "Execute Quantum Circuit across 2^k states"
+
+# 3. Cross-Check Comparison
+backend_engine.verilog_subsystem.golden_data -> backend_engine.comparator_core.bitwise_diff: "Golden Outputs Y_ref(x)"
+backend_engine.quantum_subsystem.quantum_data -> backend_engine.comparator_core.bitwise_diff: "Quantum Outputs Y_quant(x)"
+backend_engine.quantum_subsystem.quantum_data -> backend_engine.comparator_core.fidelity_calc: "Quantum Statevectors"
+
+# 4. Analytics Delivery to Frontend
+backend_engine.comparator_core.stat_calc -> studio_ui.analytics_dash: "4. Return JSON: Heatmap, Histograms, Box Plot, Fidelity"
+
+# 5. Dual Export
+studio_ui.dual_export_btn -> storage.q_files: "Export Quantum JSON / QASM"
+studio_ui.dual_export_btn -> storage.v_files: "Export Synthesizable Verilog & TB"

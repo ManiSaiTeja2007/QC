@@ -11,9 +11,13 @@ import { CircuitIndexEntry } from '../../types/circuit';
 import { circuitStore } from '../../services/circuitStore';
 import { GateInfoModal } from '../GateInfoModal';
 
+import { FloatingToolbox } from '../FloatingToolbox';
+import { CrossVerifyPanel } from '../verilog/CrossVerifyPanel';
+
 interface LiveSimulationWorkspaceProps {
   initialArchitecture?: string;
   onArchChange?: (arch: string) => void;
+  onNavigateToVerilogStudio?: () => void;
 }
 
 const LEGACY_PRESETS = ['1-bit-alu', 'falfg-gate', 'fredkin-gate', 'bennett-adder'];
@@ -21,6 +25,7 @@ const LEGACY_PRESETS = ['1-bit-alu', 'falfg-gate', 'fredkin-gate', 'bennett-adde
 export const LiveSimulationWorkspace: React.FC<LiveSimulationWorkspaceProps> = ({
   initialArchitecture = '1-bit-alu',
   onArchChange,
+  onNavigateToVerilogStudio,
 }) => {
   // Simulation controls — architecture is also driven externally by sidebar
   const [architecture, setArchitectureState] = useState<string>(initialArchitecture);
@@ -282,6 +287,23 @@ export const LiveSimulationWorkspace: React.FC<LiveSimulationWorkspaceProps> = (
           />
         </div>
       </main>
+
+      {/* Classical Cross-Verify Floating Toolbox */}
+      <FloatingToolbox
+        title="🔌 Classical Cross-Verify"
+        defaultPosition={{ x: typeof window !== 'undefined' ? Math.max(20, window.innerWidth - 430) : 740, y: 110 }}
+        collapsedByDefault={false}
+        width={410}
+        accentColor="#10b981"
+      >
+        <CrossVerifyPanel
+          simulationData={simulationData}
+          architecture={architecture}
+          inputBits={inputBits}
+          qubitNames={qubitNames}
+          onOpenInVerilogStudio={onNavigateToVerilogStudio}
+        />
+      </FloatingToolbox>
 
       {/* Gate Inspection Modal */}
       {activeModalGate && (

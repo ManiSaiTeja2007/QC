@@ -245,7 +245,7 @@ export const BlochPanel: React.FC<BlochPanelProps> = ({
     cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(W, H);
+    renderer.setSize(W, H, false);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     el.appendChild(renderer.domElement);
     rendererRef.current = renderer;
@@ -313,15 +313,20 @@ export const BlochPanel: React.FC<BlochPanelProps> = ({
     };
     el.addEventListener('click', onClick);
 
+    let lastW = W;
+    let lastH = H;
     const ro = new ResizeObserver(() => {
       if (!canvasMountRef.current || !rendererRef.current || !cameraRef.current) return;
       const w = canvasMountRef.current.clientWidth,
         h = canvasMountRef.current.clientHeight;
       if (!w || !h) return;
+      // Prevent infinite subpixel layout feedback loops
+      if (Math.abs(w - lastW) < 2 && Math.abs(h - lastH) < 2) return;
+      lastW = w;
+      lastH = h;
       cameraRef.current.aspect = w / h;
       cameraRef.current.updateProjectionMatrix();
-      rendererRef.current.setSize(w, h);
-      positionCamera();
+      rendererRef.current.setSize(w, h, false);
     });
     ro.observe(el);
 
@@ -363,6 +368,9 @@ export const BlochPanel: React.FC<BlochPanelProps> = ({
       ctrl.update();
     }
   };
+
+  // Stable key for topology rebuild to prevent thrashing when props produce new array references
+  const topologyKey = `${targetDisplayQubits.join(',')}_${selectedQubit}_${qubitNames.join(',')}`;
 
   // ── Rebuild spheres when displayedQubits topology changes ─────────────────
   useEffect(() => {
@@ -436,7 +444,7 @@ export const BlochPanel: React.FC<BlochPanelProps> = ({
     }
 
     positionCamera();
-  }, [targetDisplayQubits, selectedQubit, qubitNames]); // eslint-disable-line
+  }, [topologyKey]); // eslint-disable-line
 
   // ── Update target vectors from physics ─────────────────────────────────────
   useEffect(() => {
@@ -481,7 +489,7 @@ export const BlochPanel: React.FC<BlochPanelProps> = ({
   return (
     <div className="bloch-container" ref={containerRef} style={{ position: 'relative' }}>
       <div
-        className="bloch-canvas-mount"
+        className="bloch-canvas-mount bloch-canvas-box"
         ref={canvasMountRef}
         style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}
       />

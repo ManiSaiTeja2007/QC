@@ -5,28 +5,53 @@ import { TransportBar } from '../TransportBar';
 import { StatePanel } from '../StatePanel';
 import { StateSummaryStrip } from '../StateSummaryStrip';
 import { BlochPanel } from '../BlochPanel';
+import { FloatingToolbox } from '../FloatingToolbox';
 import { fetchCustomSimulationData } from '../../services/api';
 import { SimulationPayload } from '../../types/simulation';
 import { CircuitFileSchema } from '../../types/circuit';
 import { SaveCircuitModal } from '../modals/SaveCircuitModal';
+import { IOContract, makeDefaultIOContract } from '../../types/io_contract';
 
 interface BuilderWorkspaceProps {
   circuitToLoad?: CircuitFileSchema | null;
   onCircuitSaved?: () => void;
+  onCircuitChange?: (circuit: {
+    name: string;
+    num_qubits: number;
+    input_bits: number[];
+    gates: Array<{ name: string; qubits: number[]; params?: number[] }>;
+  }) => void;
+  ioContract?: IOContract | null;
+  onIOContractChange?: (contract: IOContract) => void;
 }
 
 export const BuilderWorkspace: React.FC<BuilderWorkspaceProps> = ({
   circuitToLoad,
   onCircuitSaved,
+  onCircuitChange,
+  ioContract,
+  onIOContractChange,
 }) => {
-  const [numQubits, setNumQubits] = useState<number>(3);
-  const [inputBits, setInputBits] = useState<number[]>([1, 0, 1]);
-  const [placedGates, setPlacedGates] = useState<PlacedGate[]>([
-    { id: '1', name: 'H', qubits: [0], step: 1 },
-    { id: '2', name: 'CX', qubits: [0, 1], step: 2 },
-    { id: '3', name: 'T', qubits: [0], step: 3 },
-  ]);
+  const [numQubits, setNumQubits] = useState<number>(2);
+  const [inputBits, setInputBits] = useState<number[]>([0, 0]);
+  const [placedGates, setPlacedGates] = useState<PlacedGate[]>([]);
   const [selectedGate, setSelectedGate] = useState<string | null>(null);
+
+  // Sync banner state when Verilog Studio updates the I/O contract
+  const [showSyncBanner, setShowSyncBanner] = useState<boolean>(false);
+  useEffect(() => {
+    if (ioContract && ioContract.source === 'verilog-studio') {
+      setShowSyncBanner(true);
+    }
+  }, [ioContract]);
+
+  const handleAcceptSync = () => {
+    if (!ioContract) return;
+    const total = Math.max(1, ioContract.inputs.length + ioContract.outputs.length);
+    setNumQubits(total);
+    setInputBits(Array(total).fill(0));
+    setShowSyncBanner(false);
+  };
 
   // Metadata of currently loaded circuit (if loaded from Library Hub)
   const [loadedCircuitMeta, setLoadedCircuitMeta] = useState<{
@@ -38,6 +63,20 @@ export const BuilderWorkspace: React.FC<BuilderWorkspaceProps> = ({
   } | null>(null);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
+
+  // Notify parent on circuit edits for live cross-synchronization with Verilog Studio
+  useEffect(() => {
+    onCircuitChange?.({
+      name: loadedCircuitMeta?.name || 'Builder Custom Circuit',
+      num_qubits: numQubits,
+      input_bits: inputBits,
+      gates: placedGates.map((g) => ({
+        name: g.name,
+        qubits: g.qubits,
+        params: g.params,
+      })),
+    });
+  }, [numQubits, inputBits, placedGates, loadedCircuitMeta?.name, onCircuitChange]);
 
   // Synchronize canvas if an external circuit was loaded from the Library Hub
   useEffect(() => {
@@ -199,19 +238,26 @@ export const BuilderWorkspace: React.FC<BuilderWorkspaceProps> = ({
   // Handlers for Canvas
   const handleAddQubit = () => {
     if (numQubits < 10) {
-      setNumQubits((prev) => prev + 1);
+      const nextQ = numQubits + 1;
+      setNumQubits(nextQ);
       setInputBits((prev) => [...prev, 0]);
+      const inCount = Math.max(1, Math.ceil(nextQ / 2));
+      const outCount = Math.max(1, nextQ - inCount);
+      onIOContractChange?.(makeDefaultIOContract(inCount, outCount, 'builder'));
     }
   };
 
   const handleRemoveQubit = () => {
     if (numQubits > 1) {
       const targetQ = numQubits - 1;
-      setNumQubits((prev) => prev - 1);
+      setNumQubits(targetQ);
       setInputBits((prev) => prev.slice(0, targetQ));
       setPlacedGates((prev) => prev.filter((g) => !g.qubits.includes(targetQ)));
       if (selectedQubit >= targetQ) setSelectedQubit(0);
       setCustomDisplayedQubits((prev) => prev.filter((q) => q < targetQ));
+      const inCount = Math.max(1, Math.ceil(targetQ / 2));
+      const outCount = Math.max(1, targetQ - inCount);
+      onIOContractChange?.(makeDefaultIOContract(inCount, outCount, 'builder'));
     }
   };
 
@@ -257,11 +303,68 @@ export const BuilderWorkspace: React.FC<BuilderWorkspaceProps> = ({
 
   return (
     <main className="builder-dedicated-workspace">
-      {/* 1. Left Gate Palette */}
-      <GatePalette selectedGate={selectedGate} onSelectGate={setSelectedGate} />
+      {/* Floating Draggable Quantum Gate Palette */}
+      <FloatingToolbox
+        title="⚛ Quantum Gates"
+        defaultPosition={{ x: 20, y: 120 }}
+        width={260}
+        accentColor="#38bdf8"
+      >
+        <GatePalette selectedGate={selectedGate} onSelectGate={setSelectedGate} />
+      </FloatingToolbox>
 
-      {/* 2. Right Canvas & Integrated Simulation Area */}
+      {/* Main Canvas & Integrated Simulation Area */}
       <div className="builder-right-area">
+        {/* Classical Studio Sync Banner */}
+        {showSyncBanner && ioContract && (
+          <div style={{
+            background: '#0c1a2e',
+            border: '1px solid #1d4ed8',
+            borderRadius: 6,
+            padding: '6px 12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontSize: '0.75rem',
+            color: '#93c5fd',
+          }}>
+            <span>
+              📥 <b>Classical Studio Sync:</b> {ioContract.inputs.length} inputs + {ioContract.outputs.length} outputs ({ioContract.inputs.length + ioContract.outputs.length} qubits total) detected.
+            </span>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button
+                onClick={handleAcceptSync}
+                style={{
+                  background: '#2563eb',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 4,
+                  padding: '2px 8px',
+                  fontSize: '0.72rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Accept Sync
+              </button>
+              <button
+                onClick={() => setShowSyncBanner(false)}
+                style={{
+                  background: 'transparent',
+                  color: '#94a3b8',
+                  border: '1px solid #334155',
+                  borderRadius: 4,
+                  padding: '2px 6px',
+                  fontSize: '0.72rem',
+                  cursor: 'pointer',
+                }}
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Canvas Section */}
         <CircuitCanvas
           numQubits={numQubits}
@@ -280,7 +383,7 @@ export const BuilderWorkspace: React.FC<BuilderWorkspaceProps> = ({
           onSaveToLibrary={() => setIsSaveModalOpen(true)}
         />
 
-        {/* Embedded Live Simulation Section */}
+        {/* Transport & Live Step Simulation Dock */}
         <div className="builder-sim-dock">
           <TransportBar
             currentStep={currentStep}

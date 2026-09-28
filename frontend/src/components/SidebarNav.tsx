@@ -17,6 +17,7 @@ interface SidebarNavProps {
 
 const MODES: { mode: StudioMode; icon: string; label: string; badge: string }[] = [
   { mode: 'builder',          icon: '🎨', label: 'Circuit Builder',  badge: 'DRAG' },
+  { mode: 'verilog-studio',   icon: '📐', label: 'Verilog Studio',   badge: 'LOGISIM' },
   { mode: 'single-gate-lab',  icon: '🔬', label: 'Single Gate Lab',  badge: '28+' },
   { mode: 'live-simulation',  icon: '⚡', label: 'Live Simulation',  badge: 'STEP' },
   { mode: 'qml-lab',          icon: '🧠', label: 'QML Lab',          badge: 'VQC' },
@@ -261,6 +262,8 @@ const SideItem: React.FC<SideItemProps> = ({ icon, label, badge, active, collaps
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       title={collapsed ? `${label}${badge ? ` (${badge})` : ''}` : undefined}
+      aria-label={label}
+      data-testid={label}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -289,21 +292,28 @@ const SideItem: React.FC<SideItemProps> = ({ icon, label, badge, active, collaps
       }}
     >
       <span style={{ fontSize: '0.9rem', flexShrink: 0, lineHeight: 1 }}>{icon}</span>
-      {!collapsed && (
-        <>
-          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', fontSize: 11 }}>{label}</span>
-          {badge && (
-            <span style={{
-              fontSize: 9,
-              fontWeight: 700,
-              background: active ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.06)',
-              color: active ? '#60a5fa' : '#475569',
-              padding: '1px 5px',
-              borderRadius: 99,
-              flexShrink: 0,
-            }}>{badge}</span>
-          )}
-        </>
+      <span
+        style={{
+          flex: 1,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          fontSize: 11,
+          display: collapsed ? 'none' : 'inline',
+        }}
+        className="sidebar-item-label"
+      >
+        {label}
+      </span>
+      {!collapsed && badge && (
+        <span style={{
+          fontSize: 9,
+          fontWeight: 700,
+          background: active ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.06)',
+          color: active ? '#60a5fa' : '#475569',
+          padding: '1px 5px',
+          borderRadius: 99,
+          flexShrink: 0,
+        }}>{badge}</span>
       )}
     </button>
   );

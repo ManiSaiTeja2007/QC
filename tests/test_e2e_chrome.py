@@ -173,6 +173,105 @@ class TestQuantumStudioChromeDevTools(unittest.TestCase):
         self.snapshot("06_single_gate_lab.png")
         print("  ✅ Test 06: Single Gate Lab workspace verified")
 
+    def test_08_verilog_verification_studio_and_snapshots(self):
+        """Verify Dedicated Verilog Verification Studio, run equivalence check, and capture all analytics snapshots including K-Map."""
+        driver = self.driver
+        driver.get(f"{BASE_URL}/#verilog-studio")
+        time.sleep(2.5)
+
+        # 1. Verify Studio header and initial state
+        title = driver.find_element(By.CLASS_NAME, "v-studio-title")
+        self.assertTrue(title.is_displayed(), "Studio title must be visible")
+
+        # Capture Initial Dedicated Studio snapshot (showing clean I/O setup panel)
+        self.snapshot("13_dedicated_verilog_studio.png")
+        print("  ✅ Captured snapshot: 13_dedicated_verilog_studio.png")
+
+        # 2. Complete I/O Setup using Full Adder template
+        try:
+            full_adder_tmpl = driver.find_element(By.XPATH, "//button[contains(., 'Full Adder')]")
+            full_adder_tmpl.click()
+            time.sleep(0.5)
+            create_btn = driver.find_element(By.XPATH, "//button[contains(., 'Create Classical Schematic')]")
+            create_btn.click()
+            time.sleep(1.0)
+        except Exception as e:
+            print(f"  Note during I/O setup: {e}")
+
+        # Verify SVG Schematic Canvas is now displayed
+        canvas_svg = driver.find_element(By.CLASS_NAME, "v-canvas-svg")
+        self.assertTrue(canvas_svg.is_displayed(), "Schematic SVG canvas must be visible after setup")
+
+        # 3. Select Target Quantum Circuit (e.g. Full Adder 5Q)
+        select_elem = driver.find_element(By.CLASS_NAME, "v-studio-select")
+        from selenium.webdriver.support.ui import Select
+        sel = Select(select_elem)
+        # Select by value or matching text
+        found_target = False
+        for opt in sel.options:
+            if "adder" in opt.text.lower() or "5q" in opt.text.lower():
+                sel.select_by_visible_text(opt.text)
+                found_target = True
+                break
+        if not found_target and len(sel.options) > 1:
+            sel.select_by_index(1)
+        time.sleep(0.5)
+
+        # 4. Click VERIFY AGAINST QUANTUM button
+        verify_btn = driver.find_element(By.XPATH, "//button[contains(., 'VERIFY AGAINST QUANTUM')]")
+        verify_btn.click()
+        time.sleep(3.5)
+
+        # Verify drawer has results
+        drawer = driver.find_element(By.CLASS_NAME, "v-drawer-container")
+        self.assertTrue(drawer.is_displayed(), "Verification drawer must be visible after verification")
+
+        # Capture Verified Full Workspace snapshot
+        self.snapshot("14_dedicated_verilog_studio_verified.png")
+        print("  ✅ Captured snapshot: 14_dedicated_verilog_studio_verified.png")
+
+        # 3. Click K-Map Synthesis tab
+        kmap_tab = driver.find_element(By.XPATH, "//button[contains(., 'K-Map Synthesis')]")
+        kmap_tab.click()
+        time.sleep(1.2)
+        self.snapshot("15_verilog_kmap.png")
+        print("  ✅ Captured snapshot: 15_verilog_kmap.png")
+
+        # 4. Click Truth Table tab
+        table_tab = driver.find_element(By.XPATH, "//button[contains(., 'Truth Table')]")
+        table_tab.click()
+        time.sleep(1.0)
+        self.snapshot("08_verilog_truth_table.png")
+        print("  ✅ Captured snapshot: 08_verilog_truth_table.png")
+
+        # 5. Click 2D Error Heatmap tab
+        heatmap_tab = driver.find_element(By.XPATH, "//button[contains(., 'Error Heatmap')]")
+        heatmap_tab.click()
+        time.sleep(1.0)
+        self.snapshot("09_verilog_error_heatmap.png")
+        print("  ✅ Captured snapshot: 09_verilog_error_heatmap.png")
+
+        # 6. Click State Fidelity Curve tab
+        fidelity_tab = driver.find_element(By.XPATH, "//button[contains(., 'State Fidelity Curve')]")
+        fidelity_tab.click()
+        time.sleep(1.0)
+        self.snapshot("10_verilog_fidelity_curve.png")
+        print("  ✅ Captured snapshot: 10_verilog_fidelity_curve.png")
+
+        # 7. Click Distribution Box Plot tab
+        boxplot_tab = driver.find_element(By.XPATH, "//button[contains(., 'Box Plot')]")
+        boxplot_tab.click()
+        time.sleep(1.0)
+        self.snapshot("11_verilog_boxplot.png")
+        print("  ✅ Captured snapshot: 11_verilog_boxplot.png")
+
+        # 8. Click Probability Histogram tab
+        histogram_tab = driver.find_element(By.XPATH, "//button[contains(., 'Histogram')]")
+        histogram_tab.click()
+        time.sleep(1.0)
+        self.snapshot("12_verilog_histograms.png")
+        print("  ✅ Captured snapshot: 12_verilog_histograms.png")
+
     def test_07_console_error_audit(self):
         """Audit Chrome DevTools console logs to ensure no severe runtime exceptions occurred."""
         logs = self.driver.get_log("browser")

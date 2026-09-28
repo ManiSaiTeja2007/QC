@@ -5,6 +5,13 @@ import {
   CircuitValidationResponse,
   CircuitUploadResponse,
 } from '../types/circuit';
+import {
+  VerificationContract,
+  VerificationResult,
+  VerilogTemplate,
+  DualExportResponse,
+  PortMapping,
+} from '../types/verilog';
 
 const API_BASE = '/api';
 
@@ -292,3 +299,77 @@ export async function deleteStoredCircuit(circuitId: string): Promise<{ status: 
 export function getCircuitExportUrl(circuitId: string): string {
   return `${API_BASE}/circuits/${encodeURIComponent(circuitId)}/export`;
 }
+
+// ====================================================================
+// Verilog ↔ Quantum Equivalence Verification API
+// ====================================================================
+
+export async function fetchVerilogTemplates(): Promise<VerilogTemplate[]> {
+  const response = await fetch(`${API_BASE}/verilog/templates`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch Verilog templates: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function simulateVerilogStandalone(payload: {
+  verilog_code: string;
+  top_module_name?: string;
+  input_ports: PortMapping[];
+  output_ports: PortMapping[];
+}): Promise<{
+  status: string;
+  message: string;
+  stderr?: string | null;
+  total_states: number;
+  table: any[];
+  execution_time_ms: number;
+}> {
+  const response = await fetch(`${API_BASE}/verilog/simulate-verilog`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: response.statusText }));
+    throw new Error(err.detail || `Verilog simulation failed: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function verifyCircuitAgainstVerilog(payload: {
+  contract: VerificationContract;
+  circuit_id?: string;
+  custom_circuit?: CustomCircuitPayload;
+  schematic_netlist?: any;
+}): Promise<VerificationResult> {
+  const response = await fetch(`${API_BASE}/verilog/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: response.statusText }));
+    throw new Error(err.detail || `Verification failed: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function exportDualCircuits(payload: {
+  circuit_id?: string;
+  custom_circuit?: CustomCircuitPayload;
+  verilog_code?: string;
+  top_module_name?: string;
+}): Promise<DualExportResponse> {
+  const response = await fetch(`${API_BASE}/verilog/export-dual`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: response.statusText }));
+    throw new Error(err.detail || `Dual export failed: ${response.statusText}`);
+  }
+  return response.json();
+}
+

@@ -5,8 +5,8 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-v0.115-009688.svg)](https://fastapi.tiangolo.com/)
 [![Vite + React](https://img.shields.io/badge/Vite%2BReact-TypeScript-646CFF.svg)](https://vitejs.dev/)
 [![Three.js](https://img.shields.io/badge/Three.js-3D%20WebGL-black.svg)](https://threejs.org/)
-[![Backend Tests](https://img.shields.io/badge/pytest-74%2F74%20passed-brightgreen.svg)]()
-[![Chrome E2E](https://img.shields.io/badge/Chrome%20DevTools%20E2E-7%2F7%20passed-success.svg)]()
+[![Backend Tests](https://img.shields.io/badge/pytest-86%2F86%20passed-brightgreen.svg)]()
+[![Chrome E2E](https://img.shields.io/badge/Chrome%20DevTools%20E2E-8%2F8%20passed-success.svg)]()
 
 > **IEEE Transactions on Emerging Topics in Computing (TETC 2026) Paper Replication & Interactive 3D WebGL Workbench:**  
 > **"A New Quantum Efficient Fault Tolerant Parity Preserving Clifford + T ALU"**  
@@ -78,7 +78,63 @@ Explore single-qubit quantum physics with continuous Bloch vector trajectory ani
 
 ---
 
+### 7. 🔌 Dedicated Classical Schematic & Verilog Verification Studio (`#verilog-studio`)
+
+Cross-check quantum circuits directly against an **independent classical specification** authored as an interactive Logisim-style schematic or synthesizable Verilog HDL module. Simulated via local Icarus Verilog (`iverilog` + `vvp`) and Qiskit Aer, the studio guarantees formal independence (Rule 1: quantum circuits are never circular golden references for themselves):
+
+- **Logisim-Style Visual Schematic Editor**: Interactive dot-grid canvas with multi-input logic gates (`AND`, `OR`, `NAND`, `NOR`, `XOR`, `XNOR`, `NOT`, `BUFFER`) supporting configurable fan-in ($N \ge 2$), orthogonal wire routing with junction dots, click-to-toggle input bits, and live color-coded signal levels (Bright Green = 1, Dark Green = 0).
+- **Deterministic Client-Side Logic Evaluator**: Instantaneous signal propagation and DFS cycle detection (`Combinational loop detected: G1 → G2 → G1`) executing directly in the browser without spawning subprocesses on every mouse click.
+- **Canonical Classical Netlist IR**: Strict separation between the visual graph, canonical structural netlist (`ClassicalNetlist`), and generated Verilog generator.
+- **Classical Self-Consistency Gate**: Verifies Schematic Netlist Evaluator against Compiled Verilog Truth Table (`schematic ↔ verilog`) before comparing with the quantum circuit (`verilog ↔ quantum`).
+- **Exhaustive Differential Verification**: Verifies functional equivalence ($\forall x: Y_{\text{ref}}(x) = Y_{\text{quant}}(x)$) across all $2^k$ input basis states, evaluates uncomputed ancilla cleanliness, and computes rich statistical analytics:
+
+#### A. Dedicated Studio Viewport & Visual Schematic Canvas
+Construct independent classical gate schematics with multi-input logic gates, orthogonal wiring, and real-time client-side signal propagation:
+
+![Dedicated Verilog Studio Verified](docs/images/14_dedicated_verilog_studio_verified.png)
+*Figure 7: Dedicated Verilog & Classical Verification Studio showing complete Logisim-style schematic canvas, target quantum selection (including live synchronized builder circuit), and equivalence analytics.*
+
+#### B. Karnaugh Map (K-Map) Synthesis & Boolean Minimization
+Interactive 2, 3, and 4-variable Gray-Code Karnaugh maps for fast combinational logic analysis and two-level Sum-of-Products (SOP) minimization:
+
+![K-Map Synthesis](docs/images/15_verilog_kmap.png)
+*Figure 8: Karnaugh Map (K-Map) visualizer with Gray-code cell indexing, minterm highlights ($\Sigma m$), and canonical Boolean algebraic equations.*
+
+#### C. Differential Truth Table Matrix
+Interactive side-by-side comparison of Golden Verilog outputs ($Y_{\text{ref}}$) vs Quantum measurements ($Y_{\text{quant}}$) across all $2^k$ computational basis states.
+
+![Truth Table Matrix](docs/images/08_verilog_truth_table.png)
+*Figure 9: Exhaustive Truth Table Matrix displaying bitwise equivalence, state fidelity $F(x)$, and ancilla restoration.*
+
+#### D. 2D Error & Mismatch Heatmap
+High-density visual matrix mapping input basis state vectors against individual output bit positions ($0 = \text{Match}$, $1 = \text{Mismatch}$).
+
+![2D Error Heatmap](docs/images/09_verilog_error_heatmap.png)
+*Figure 10: 2D Error Heatmap highlighting exact bit locations and error density across states.*
+
+#### E. Quantum State Fidelity Curve
+State-by-state quantum fidelity $F(x) = |\langle\psi_{\text{expected}}(x)|\psi_{\text{actual}}(x)\rangle|^2$ plotted across all computational basis states.
+
+![State Fidelity Curve](docs/images/10_verilog_fidelity_curve.png)
+*Figure 11: State Fidelity Curve with mean fidelity, grid threshold lines, and hover state inspection.*
+
+#### F. Fidelity Distribution Box Plot
+Five-number statistical summary (Minimum, $Q_1$, Median, $Q_3$, Maximum, and Interquartile Range $\text{IQR}$) visualizing fidelity distribution and dispersion.
+
+![Fidelity Box Plot](docs/images/11_verilog_boxplot.png)
+*Figure 12: Statistical Box-and-Whisker Plot displaying quartile distributions and error margins.*
+
+#### G. Probability Distribution Histograms
+Direct probability comparison between deterministic Verilog reference certainty ($1.0$) and quantum state probabilities.
+
+![Probability Histograms](docs/images/12_verilog_histograms.png)
+*Figure 13: Probability comparison bars between Verilog golden reference and quantum measurement distributions.*
+
+---
+
 ## 🏛️ System Architecture
+
+*(Vector Specification Asset: [`verilog_verification_architecture.svg`](docs/images/verilog_verification_architecture.svg))*
 
 ```mermaid
 flowchart TD
@@ -236,10 +292,10 @@ python3 tests/test_e2e_chrome.py
 ---
 
 ### 3. Run Backend Python Test Suites
-Run all 74 unit, integration, lifecycle, and performance tests:
+Run all 86 unit, integration, lifecycle, and differential verification tests:
 
 ```bash
-PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest tests/test_circuit_storage.py tests/test_circuit_api.py tests/test_circuit_lifecycle.py tests/test_phase5_performance.py tests/test_falfg.py tests/test_one_bit_alu.py tests/test_uncomputation.py -v
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest tests/test_circuit_storage.py tests/test_circuit_api.py tests/test_circuit_lifecycle.py tests/test_phase5_performance.py tests/test_falfg.py tests/test_one_bit_alu.py tests/test_uncomputation.py tests/test_verilog_engine.py tests/test_verilog_cross_check.py -v
 ```
 
 ---
