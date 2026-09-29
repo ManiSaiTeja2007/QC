@@ -11,6 +11,7 @@ import {
   VerilogTemplate,
   DualExportResponse,
   PortMapping,
+  VerilogSimulateResponse,
 } from '../types/verilog';
 
 const API_BASE = '/api';
@@ -317,14 +318,7 @@ export async function simulateVerilogStandalone(payload: {
   top_module_name?: string;
   input_ports: PortMapping[];
   output_ports: PortMapping[];
-}): Promise<{
-  status: string;
-  message: string;
-  stderr?: string | null;
-  total_states: number;
-  table: any[];
-  execution_time_ms: number;
-}> {
+}): Promise<VerilogSimulateResponse> {
   const response = await fetch(`${API_BASE}/verilog/simulate-verilog`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

@@ -11,9 +11,6 @@ import { CircuitIndexEntry } from '../../types/circuit';
 import { circuitStore } from '../../services/circuitStore';
 import { GateInfoModal } from '../GateInfoModal';
 
-import { FloatingToolbox } from '../FloatingToolbox';
-import { CrossVerifyPanel } from '../verilog/CrossVerifyPanel';
-
 interface LiveSimulationWorkspaceProps {
   initialArchitecture?: string;
   onArchChange?: (arch: string) => void;
@@ -267,43 +264,52 @@ export const LiveSimulationWorkspace: React.FC<LiveSimulationWorkspaceProps> = (
           onBasisChange={setMeasurementBasis}
         />
 
-        {/* Panel 3: 3D Three.js WebGL Bloch Studio & State Summary */}
-        <div className="card panel-bloch-wrapper">
-          <StateSummaryStrip
-            stepData={stepData}
-            selectedQubit={selectedQubit}
-            qubitNames={qubitNames}
-            viewMode={viewMode}
-            onSelectQubit={setSelectedQubit}
-          />
-          <BlochPanel
-            numQubits={simulationData?.num_qubits || 7}
-            qubitNames={qubitNames}
-            stepData={stepData}
-            selectedQubit={selectedQubit}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-            onSelectQubit={setSelectedQubit}
-          />
+        {/* Panel 3: Docked Right Inspector (3D Bloch Studio) */}
+        <div className="card panel-bloch-wrapper" style={{ display: 'flex', flexDirection: 'column' }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '7px 12px',
+            borderBottom: '1px solid var(--card-border)',
+            background: 'var(--header-bg)',
+            flexShrink: 0,
+          }}>
+            <span style={{
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              color: 'var(--text-main)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}>
+              🌐 3D Bloch Studio
+            </span>
+            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+              Three.js WebGL
+            </span>
+          </div>
+
+          <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+            <StateSummaryStrip
+              stepData={stepData}
+              selectedQubit={selectedQubit}
+              qubitNames={qubitNames}
+              viewMode={viewMode}
+              onSelectQubit={setSelectedQubit}
+            />
+            <BlochPanel
+              numQubits={simulationData?.num_qubits || 7}
+              qubitNames={qubitNames}
+              stepData={stepData}
+              selectedQubit={selectedQubit}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+              onSelectQubit={setSelectedQubit}
+            />
+          </div>
         </div>
       </main>
-
-      {/* Classical Cross-Verify Floating Toolbox */}
-      <FloatingToolbox
-        title="🔌 Classical Cross-Verify"
-        defaultPosition={{ x: typeof window !== 'undefined' ? Math.max(20, window.innerWidth - 430) : 740, y: 110 }}
-        collapsedByDefault={false}
-        width={410}
-        accentColor="#10b981"
-      >
-        <CrossVerifyPanel
-          simulationData={simulationData}
-          architecture={architecture}
-          inputBits={inputBits}
-          qubitNames={qubitNames}
-          onOpenInVerilogStudio={onNavigateToVerilogStudio}
-        />
-      </FloatingToolbox>
 
       {/* Gate Inspection Modal */}
       {activeModalGate && (

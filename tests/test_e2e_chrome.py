@@ -187,20 +187,11 @@ class TestQuantumStudioChromeDevTools(unittest.TestCase):
         self.snapshot("13_dedicated_verilog_studio.png")
         print("  ✅ Captured snapshot: 13_dedicated_verilog_studio.png")
 
-        # 2. Complete I/O Setup using Full Adder template
-        try:
-            full_adder_tmpl = driver.find_element(By.XPATH, "//button[contains(., 'Full Adder')]")
-            full_adder_tmpl.click()
-            time.sleep(0.5)
-            create_btn = driver.find_element(By.XPATH, "//button[contains(., 'Create Classical Schematic')]")
-            create_btn.click()
-            time.sleep(1.0)
-        except Exception as e:
-            print(f"  Note during I/O setup: {e}")
-
-        # Verify SVG Schematic Canvas is now displayed
-        canvas_svg = driver.find_element(By.CLASS_NAME, "v-canvas-svg")
-        self.assertTrue(canvas_svg.is_displayed(), "Schematic SVG canvas must be visible after setup")
+        # 2. Verify Replit IDE Editor and Terminal are displayed
+        editor_elem = driver.find_element(By.CLASS_NAME, "v-ide-editor-container")
+        self.assertTrue(editor_elem.is_displayed(), "Replit IDE code editor must be visible")
+        terminal_elem = driver.find_element(By.CLASS_NAME, "v-ide-terminal-container")
+        self.assertTrue(terminal_elem.is_displayed(), "Compiler terminal must be visible")
 
         # 3. Select Target Quantum Circuit (e.g. Full Adder 5Q)
         select_elem = driver.find_element(By.CLASS_NAME, "v-studio-select")

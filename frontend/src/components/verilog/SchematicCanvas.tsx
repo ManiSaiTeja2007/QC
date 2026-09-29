@@ -7,7 +7,6 @@ import {
   ClassicalGateType,
 } from '../../types/classical_schematic';
 import { evaluateSchematic } from '../../services/schematicEvaluator';
-import { FloatingToolbox } from '../FloatingToolbox';
 import {
   Plus,
   Trash2,
@@ -303,31 +302,47 @@ export const SchematicCanvas: React.FC<SchematicCanvasProps> = ({
         </div>
       </div>
 
-      {/* IEEE-style Gate Palette — Floating Toolbox */}
-      <FloatingToolbox title="🔌 Classical Gates" defaultPosition={{ x: 16, y: 200 }} accentColor="#10b981" width={120}>
-        <div style={{ padding: '8px 6px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {/* Canvas workspace area with docked left gate palette */}
+      <div style={{ display: 'flex', flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden' }}>
+        {/* IEEE-style Gate Palette — Docked Left Sidebar */}
+        <aside style={{
+          width: 84,
+          background: 'var(--card-bg)',
+          borderRight: '1px solid var(--card-border)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 5,
+          padding: '8px 4px',
+          overflowY: 'auto',
+          flexShrink: 0,
+        }}>
+          <span style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>
+            Gates
+          </span>
           {GATE_TYPES.map((g) => (
             <button
               key={g.type}
               onClick={() => handleAddGate(g.type)}
               title={`Place ${g.label}`}
               style={{
-                background: '#0d1a2e',
+                width: '100%',
+                background: 'var(--input-bg)',
                 border: `1px solid ${g.color}55`,
                 borderRadius: 6,
-                padding: '6px 4px',
+                padding: '5px 2px',
                 cursor: 'pointer',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                gap: 4,
+                gap: 3,
                 transition: 'all 0.12s ease',
               }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = `${g.color}22`; (e.currentTarget as HTMLButtonElement).style.borderColor = g.color; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#0d1a2e'; (e.currentTarget as HTMLButtonElement).style.borderColor = `${g.color}55`; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--input-bg)'; (e.currentTarget as HTMLButtonElement).style.borderColor = `${g.color}55`; }}
             >
               {/* IEEE-style SVG gate symbol */}
-              <svg width="56" height="34" viewBox="0 0 56 34">
+              <svg width="48" height="28" viewBox="0 0 56 34">
                 {g.type === 'AND' && (
                   <g stroke={g.color} strokeWidth="1.5" fill="none">
                     <path d="M 8 6 L 26 6 C 42 6 42 28 26 28 L 8 28 Z" />
@@ -382,16 +397,15 @@ export const SchematicCanvas: React.FC<SchematicCanvasProps> = ({
                   </g>
                 )}
               </svg>
-              <span style={{ fontSize: '0.62rem', color: g.color, fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.02em' }}>
+              <span style={{ fontSize: '0.60rem', color: g.color, fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.02em' }}>
                 {g.type}
               </span>
             </button>
           ))}
-        </div>
-      </FloatingToolbox>
+        </aside>
 
-      {/* Main Interactive SVG Canvas */}
-      <div className="v-canvas-viewport" style={{ flex: 1, minHeight: 0 }}>
+        {/* Main Interactive SVG Canvas */}
+        <div className="v-canvas-viewport" style={{ flex: 1, minHeight: 0 }}>
         <svg
           ref={svgRef}
           className="v-canvas-svg"
@@ -685,5 +699,6 @@ export const SchematicCanvas: React.FC<SchematicCanvasProps> = ({
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 };

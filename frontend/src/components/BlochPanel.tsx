@@ -238,7 +238,6 @@ export const BlochPanel: React.FC<BlochPanelProps> = ({
       H = el.clientHeight || 380;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x030509);
     sceneRef.current = scene;
 
     const camera = new THREE.PerspectiveCamera(42, W / H, 0.1, 1000);
@@ -494,7 +493,7 @@ export const BlochPanel: React.FC<BlochPanelProps> = ({
         style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}
       />
 
-      {/* Axis legend (focus view only — clutter in grid view) */}
+      {/* Axis legend (focus view only — clean and compact) */}
       {isSingleFocus && (
         <div className="bloch-axis-legend-overlay">
           <div className="axis-legend-title">3D BLOCH SPHERE</div>
@@ -504,22 +503,7 @@ export const BlochPanel: React.FC<BlochPanelProps> = ({
         </div>
       )}
 
-      {/* Pure state tag */}
-      <div className="bloch-pure-state-overlay">
-        <span className="pure-tag">Pure State</span>
-        <span className="purity-val">|r|=1.000</span>
-      </div>
-
-      {/* Bottom info */}
-      {isSingleFocus && (
-        <div className="bloch-bottom-info-overlay">
-          <span>t = {animTime.toFixed(3)}</span>
-          <span>── r(t)</span>
-          <span>--- trail</span>
-        </div>
-      )}
-
-      {/* Phase 126 & 127: Display Modes Toolbar ([Active] [Selected] [All] [⚙ Qubits]) */}
+      {/* Display Modes Toolbar ([Active] [Selected] [All] [⚙ Qubits]) */}
       <div className="bloch-mode-overlay">
         {onDisplayModeChange ? (
           <>

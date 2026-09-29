@@ -81,6 +81,7 @@ def get_template_by_id(template_id: str):
         "verilog_code": t["verilog_code"],
         "input_ports": [p.model_dump() for p in t["input_ports"]],
         "output_ports": [p.model_dump() for p in t["output_ports"]],
+        "ancillas": [a.model_dump() for a in t.get("ancillas", [])],
     }
 
 
@@ -119,6 +120,8 @@ def verify_circuit_against_verilog(payload: CircuitVerifyPayload):
                 contract.input_ports = tmpl["input_ports"]
             if not contract.output_ports:
                 contract.output_ports = tmpl["output_ports"]
+            if not contract.ancillas and "ancillas" in tmpl:
+                contract.ancillas = tmpl["ancillas"]
 
     # Auto-resolve from schematic_netlist if provided and ports are missing
     if payload.schematic_netlist:

@@ -5,7 +5,6 @@ import { TransportBar } from '../TransportBar';
 import { StatePanel } from '../StatePanel';
 import { StateSummaryStrip } from '../StateSummaryStrip';
 import { BlochPanel } from '../BlochPanel';
-import { FloatingToolbox } from '../FloatingToolbox';
 import { fetchCustomSimulationData } from '../../services/api';
 import { SimulationPayload } from '../../types/simulation';
 import { CircuitFileSchema } from '../../types/circuit';
@@ -36,6 +35,7 @@ export const BuilderWorkspace: React.FC<BuilderWorkspaceProps> = ({
   const [inputBits, setInputBits] = useState<number[]>([0, 0]);
   const [placedGates, setPlacedGates] = useState<PlacedGate[]>([]);
   const [selectedGate, setSelectedGate] = useState<string | null>(null);
+  const [paletteCollapsed, setPaletteCollapsed] = useState<boolean>(false);
 
   // Sync banner state when Verilog Studio updates the I/O contract
   const [showSyncBanner, setShowSyncBanner] = useState<boolean>(false);
@@ -303,15 +303,24 @@ export const BuilderWorkspace: React.FC<BuilderWorkspaceProps> = ({
 
   return (
     <main className="builder-dedicated-workspace">
-      {/* Floating Draggable Quantum Gate Palette */}
-      <FloatingToolbox
-        title="⚛ Quantum Gates"
-        defaultPosition={{ x: 20, y: 120 }}
-        width={260}
-        accentColor="#38bdf8"
-      >
-        <GatePalette selectedGate={selectedGate} onSelectGate={setSelectedGate} />
-      </FloatingToolbox>
+      {/* Docked Collapsible Quantum Gate Palette */}
+      <aside className={`builder-palette-dock ${paletteCollapsed ? 'collapsed' : ''}`}>
+        <div className="dock-header">
+          {!paletteCollapsed && <span className="dock-title">⚛ Quantum Gates</span>}
+          <button
+            className="dock-toggle-btn"
+            onClick={() => setPaletteCollapsed(!paletteCollapsed)}
+            title={paletteCollapsed ? 'Expand gate palette' : 'Collapse gate palette'}
+          >
+            {paletteCollapsed ? '▶' : '◀'}
+          </button>
+        </div>
+        {!paletteCollapsed && (
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+            <GatePalette selectedGate={selectedGate} onSelectGate={setSelectedGate} />
+          </div>
+        )}
+      </aside>
 
       {/* Main Canvas & Integrated Simulation Area */}
       <div className="builder-right-area">

@@ -115,6 +115,7 @@ export interface VerilogTemplate {
   verilog_code: string;
   input_ports: PortMapping[];
   output_ports: PortMapping[];
+  ancillas?: AncillaContract[];
 }
 
 export interface DualExportResponse {
@@ -124,4 +125,21 @@ export interface DualExportResponse {
   circuit_json: any;
   verilog_code: string;
   top_module: string;
+}
+
+export interface VerilogSimulateRow {
+  state_index: number;
+  input_bitstring: string;
+  input_values: Record<string, number>;
+  output_bitstring: string;
+  output_values: Record<string, number>;
+}
+
+export interface VerilogSimulateResponse {
+  status: ExecutionEngineStatus;
+  message: string;
+  stderr?: string | null;
+  total_states: number;
+  table: VerilogSimulateRow[];
+  execution_time_ms: number;
 }
