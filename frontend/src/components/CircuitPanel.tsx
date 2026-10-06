@@ -14,7 +14,10 @@ import {
   FileText,
   ChevronRight,
   Info,
-  Cpu
+  Cpu,
+  Repeat,
+  ArrowDownToLine,
+  ArrowUpFromLine,
 } from 'lucide-react';
 
 interface CircuitPanelProps {
@@ -44,9 +47,16 @@ export const CircuitPanel: React.FC<CircuitPanelProps> = ({
   onInspectActiveGate,
 }) => {
   const viewportRef = useRef<HTMLDivElement>(null);
+  const pinnedLeftRef = useRef<HTMLDivElement>(null);
   const leftSvgRef = useRef<SVGSVGElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const [activeDescTab, setActiveDescTab] = useState<'overview' | 'step' | 'pinout' | 'theory'>('overview');
+
+  const handleRightScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (pinnedLeftRef.current) {
+      pinnedLeftRef.current.scrollTop = e.currentTarget.scrollTop;
+    }
+  };
 
   const [circuitHeight, setCircuitHeight] = useState<number>(() => {
     try {
@@ -170,8 +180,8 @@ export const CircuitPanel: React.FC<CircuitPanelProps> = ({
       .svg-gate-box { fill: #172136; stroke: #3b82f6; stroke-width: 1.2; rx: 4px; }
       .svg-gate-text { font-size: 9px; font-weight: 700; fill: #f8fafc; text-anchor: middle; dominant-baseline: central; font-family: monospace; }
       .svg-ctrl-dot { fill: #38bdf8; stroke: #0284c7; stroke-width: 1; }
-      .svg-target-circle { fill: #080d1a; stroke: #38bdf8; stroke-width: 1.5; }
-      .svg-target-plus { stroke: #38bdf8; stroke-width: 1.5; }
+      .svg-target-circle { fill: #04060b; stroke: #38bdf8; stroke-width: 1.5; }
+      .svg-target-plus { stroke: #38bdf8; stroke-width: 1.6; stroke-linecap: round; }
       .svg-ctrl-line { stroke: #38bdf8; stroke-width: 1.5; }
       .svg-step-num { font-size: 8px; fill: #64748b; text-anchor: middle; font-family: monospace; }
       .svg-step-num.active { fill: #38bdf8; font-weight: bold; }
@@ -277,7 +287,9 @@ export const CircuitPanel: React.FC<CircuitPanelProps> = ({
   const startX = 20;
   const startY = 32;
 
-  const gatesSvgWidth = startX + totalSteps * colWidth + 40;
+  const endWireX = startX + totalSteps * colWidth + 15;
+  const pinOutBadgeWidth = 115;
+  const gatesSvgWidth = endWireX + pinOutBadgeWidth + 25;
   const svgHeight = startY + numQubits * rowHeight + 15;
 
   return (
@@ -330,13 +342,13 @@ export const CircuitPanel: React.FC<CircuitPanelProps> = ({
         style={{ height: `${circuitHeight}px` }}
       >
         {/* Stationary / Pinned Qubit Header (Left Rail) */}
-        <div className="circuit-pinned-left">
-          <svg ref={leftSvgRef} width={88} height={svgHeight} xmlns="http://www.w3.org/2000/svg">
-            <text x={8} y={18} fontSize="8.5px" fontWeight="700" fill="#64748b" letterSpacing="0.05em">
+        <div className="circuit-pinned-left" ref={pinnedLeftRef}>
+          <svg ref={leftSvgRef} width={88} height={svgHeight} className="circuit-svg" xmlns="http://www.w3.org/2000/svg">
+            <text x={8} y={22} className="svg-step-num" textAnchor="start" fontWeight="700">
               WIRE
             </text>
-            <text x={50} y={18} fontSize="8.5px" fontWeight="700" fill="#64748b" letterSpacing="0.05em">
-              INIT
+            <text x={44} y={22} className="svg-step-num" textAnchor="start" fontWeight="700" fill="#38bdf8">
+              PIN IN
             </text>
 
             {Array.from({ length: numQubits }).map((_, q) => {
@@ -370,7 +382,7 @@ export const CircuitPanel: React.FC<CircuitPanelProps> = ({
                   </text>
                   {/* Seamless connecting wire stub into right track */}
                   <line
-                    x1={72}
+                    x1={70}
                     y1={wireY}
                     x2={88}
                     y2={wireY}
@@ -386,6 +398,7 @@ export const CircuitPanel: React.FC<CircuitPanelProps> = ({
         <div
           className="circuit-viewport"
           ref={viewportRef}
+          onScroll={handleRightScroll}
         >
           <svg ref={svgRef} className="circuit-svg" width={gatesSvgWidth} height={svgHeight} xmlns="http://www.w3.org/2000/svg">
             {/* Logical Operation Background Blocks */}
@@ -427,7 +440,7 @@ export const CircuitPanel: React.FC<CircuitPanelProps> = ({
                   key={q}
                   x1={0}
                   y1={wireY}
-                  x2={gatesSvgWidth - 15}
+                  x2={endWireX}
                   y2={wireY}
                   className={`svg-wire ${isSel ? 'selected' : ''}`}
                   onClick={() => onSelectQubit(q)}
@@ -473,18 +486,20 @@ export const CircuitPanel: React.FC<CircuitPanelProps> = ({
                     {stepNum}
                   </text>
 
-                  {g.name === 'CX' && g.qubits.length === 2 ? (
+                  {(g.name === 'CX' || g.name === 'CNOT') && g.qubits.length === 2 ? (
                     (() => {
                       const cY = startY + g.qubits[0] * rowHeight + rowHeight / 2;
                       const tY = startY + g.qubits[1] * rowHeight + rowHeight / 2;
                       return (
                         <g>
-                           <title>{g.name} — double-click for info</title>
+                          <title>{g.name} (Control: Q{g.qubits[0]}, Target: Q{g.qubits[1]}) — double-click for info</title>
                           <line x1={colX} y1={cY} x2={colX} y2={tY} className="svg-ctrl-line" />
                           <circle cx={colX} cy={cY} r={4} className="svg-ctrl-dot" />
-                          <circle cx={colX} cy={tY} r={7} className="svg-target-circle" />
-                          <line x1={colX - 4} y1={tY} x2={colX + 4} y2={tY} className="svg-target-plus" />
-                          <line x1={colX} y1={tY - 4} x2={colX} y2={tY + 4} className="svg-target-plus" />
+                          <circle cx={colX} cy={tY} r={7.5} className="svg-target-circle" fill="#04060b" />
+                          {/* Symmetrical horizontal bar of target plus */}
+                          <line x1={colX - 5.5} y1={tY} x2={colX + 5.5} y2={tY} className="svg-target-plus" strokeLinecap="round" />
+                          {/* Symmetrical vertical bar of target plus (strictly colX to colX, zero slant distortion) */}
+                          <line x1={colX} y1={tY - 5.5} x2={colX} y2={tY + 5.5} className="svg-target-plus" strokeLinecap="round" />
                         </g>
                       );
                     })()
@@ -510,6 +525,81 @@ export const CircuitPanel: React.FC<CircuitPanelProps> = ({
                       );
                     })
                   )}
+                </g>
+              );
+            })}
+
+            {/* PIN OUT (RESULT) Header aligned with step numbers at y=22 */}
+            <g>
+              <text
+                x={endWireX + pinOutBadgeWidth / 2 + 6}
+                y={22}
+                className="svg-step-num"
+                textAnchor="middle"
+                fontWeight="700"
+                fill="#38bdf8"
+              >
+                PIN OUT (RESULT)
+              </text>
+            </g>
+
+            {/* Pin Out Badges at wire termination */}
+            {Array.from({ length: numQubits }).map((_, q) => {
+              const wireY = startY + q * rowHeight + rowHeight / 2;
+              const qName = simulationData.qubit_names[q] || `Q${q}`;
+              const sig = getQubitSignalInfo(q, qName, simulationData.circuit_name);
+              const outBit = simulationData.output_bits[q];
+              const isSel = q === selectedQubit;
+
+              return (
+                <g
+                  key={`pinout-badge-${q}`}
+                  onClick={() => onSelectQubit(q)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <title>{`Pin Out: Q${q} (${sig.pinOutName}) = |${outBit}⟩ [${sig.pinOutType}] • Click to inspect wire`}</title>
+                  {/* Output wire connector stub */}
+                  <line
+                    x1={endWireX}
+                    y1={wireY}
+                    x2={endWireX + 6}
+                    y2={wireY}
+                    className={`svg-wire ${isSel ? 'selected' : ''}`}
+                  />
+                  {/* Result badge pill */}
+                  <rect
+                    x={endWireX + 6}
+                    y={wireY - 10}
+                    width={pinOutBadgeWidth}
+                    height={20}
+                    rx={4}
+                    fill={isSel ? 'rgba(56, 189, 248, 0.22)' : 'rgba(15, 23, 42, 0.88)'}
+                    stroke={isSel ? '#38bdf8' : `${sig.badgeColor}88`}
+                    strokeWidth={isSel ? 1.5 : 1}
+                  />
+                  {/* Output bit ket */}
+                  <text
+                    x={endWireX + 16}
+                    y={wireY}
+                    fontFamily="var(--font-mono)"
+                    fontSize="9px"
+                    fontWeight="700"
+                    fill="#34d399"
+                    dominantBaseline="central"
+                  >
+                    |{outBit}⟩
+                  </text>
+                  {/* Output pin label */}
+                  <text
+                    x={endWireX + 38}
+                    y={wireY}
+                    fontSize="8.5px"
+                    fontWeight="700"
+                    fill={isSel ? '#38bdf8' : '#e2e8f0'}
+                    dominantBaseline="central"
+                  >
+                    {sig.pinOutName.length > 14 ? sig.pinOutName.slice(0, 13) + '…' : sig.pinOutName}
+                  </text>
                 </g>
               );
             })}
@@ -905,96 +995,447 @@ export const CircuitPanel: React.FC<CircuitPanelProps> = ({
             );
           })()}
 
-          {/* TAB 3: QUBIT PINOUT & SIGNALS */}
+          {/* TAB 3: QUBIT PINOUT, INOUT PRINCIPLE & RESULTS */}
           {activeDescTab === 'pinout' && (() => {
             const stepData = simulationData.steps?.[currentStep] || simulationData.steps?.[0];
+            const inWeight = simulationData.input_bits.reduce((acc, b) => acc + b, 0);
+            const outWeight = simulationData.output_bits.reduce((acc, b) => acc + b, 0);
+            const isParityPreserved = (inWeight % 2) === (outWeight % 2);
 
             return (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div style={{ fontSize: '0.65rem', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span>Interactive Qubit Signal Mapping (Click row to focus wire & 3D Bloch sphere)</span>
-                  <span style={{ color: '#38bdf8', fontWeight: 600 }}>{numQubits} Qubits Total</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {/* ─── EDUCATIONAL BANNER: THE REVERSIBLE INOUT WIRE PRINCIPLE ─── */}
+                <div style={{
+                  background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 41, 59, 0.6) 100%)',
+                  border: '1px solid rgba(56, 189, 248, 0.3)',
+                  borderRadius: 8,
+                  padding: '10px 14px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 6,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{
+                        background: 'rgba(56, 189, 248, 0.15)',
+                        border: '1px solid rgba(56, 189, 248, 0.4)',
+                        padding: '4px 6px',
+                        borderRadius: 6,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}>
+                        <Repeat size={15} color="#38bdf8" />
+                      </div>
+                      <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#f8fafc', letterSpacing: '0.02em' }}>
+                        The Reversible INOUT Wire Principle
+                      </span>
+                    </div>
+                    <span style={{
+                      fontSize: '0.62rem',
+                      fontWeight: 700,
+                      padding: '2px 8px',
+                      borderRadius: 4,
+                      background: 'rgba(16, 185, 129, 0.15)',
+                      color: '#34d399',
+                      border: '1px solid rgba(16, 185, 129, 0.3)',
+                      fontFamily: 'var(--font-mono)',
+                    }}>
+                      UNITARY INVARIANCE: N_in = N_out = {numQubits}
+                    </span>
+                  </div>
+
+                  <p style={{ fontSize: '0.68rem', color: '#cbd5e1', lineHeight: 1.45, margin: 0 }}>
+                    In classical irreversible CMOS (e.g. standard ALU), input ports (<span style={{ color: '#38bdf8' }}>A, B, Cin</span>) and output ports (<span style={{ color: '#34d399' }}>Y, Cout</span>) are separate physical wires, permanently discarding intermediate states and generating <span style={{ fontFamily: 'var(--font-mono)', color: '#f59e0b' }}>k_B·T·ln(2)</span> Landauer heat. In contrast, quantum circuits are strictly unitary (<span style={{ fontFamily: 'var(--font-mono)', color: '#38bdf8' }}>U·U† = I</span>) and reversible: <strong>every wire is an INOUT quantum channel</strong>.
+                    Each wire begins as a <strong>Pin In</strong> stimulus at <span style={{ fontFamily: 'var(--font-mono)', color: '#94a3b8' }}>t = 0</span>, acts as an inout register transforming step-by-step through quantum gates, and terminates as a <strong>Pin Out</strong> result at <span style={{ fontFamily: 'var(--font-mono)', color: '#94a3b8' }}>t = T</span>.
+                  </p>
                 </div>
 
-                <div style={{
-                  border: '1px solid var(--card-border)',
-                  borderRadius: 6,
-                  overflow: 'hidden',
-                  background: 'rgba(15, 23, 42, 0.4)',
-                }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.66rem', textAlign: 'left' }}>
-                    <thead>
-                      <tr style={{ background: 'rgba(15, 23, 42, 0.8)', borderBottom: '1px solid var(--card-border)', color: '#64748b' }}>
-                        <th style={{ padding: '6px 8px' }}>Wire</th>
-                        <th style={{ padding: '6px 8px' }}>Signal / Port</th>
-                        <th style={{ padding: '6px 8px', textAlign: 'center' }}>Input</th>
-                        <th style={{ padding: '6px 8px', textAlign: 'center' }}>Current ⟨Z⟩</th>
-                        <th style={{ padding: '6px 8px', textAlign: 'center' }}>Output</th>
-                        <th style={{ padding: '6px 8px' }}>Architectural Role</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {Array.from({ length: numQubits }).map((_, q) => {
-                        const qName = simulationData.qubit_names[q] || `Q${q}`;
-                        const inBit = simulationData.input_bits[q];
-                        const outBit = simulationData.output_bits[q];
-                        const bVec = stepData?.bloch_vectors?.[q];
-                        const zExp = bVec ? bVec.z.toFixed(2) : (inBit === 1 ? '-1.00' : '1.00');
-                        const role = getQubitRole(q, qName);
-                        const isSelected = q === selectedQubit;
+                {/* ─── SECTION 1: 📥 PIN IN (INPUT STIMULUS CONFIGURATION) ─── */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    paddingBottom: 4,
+                    borderBottom: '1px solid rgba(51, 65, 85, 0.4)',
+                    flexWrap: 'wrap',
+                    gap: 6,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <ArrowDownToLine size={13} color="#34d399" />
+                      <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#34d399', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        1. Pin In — Input Stimulus Configuration (t = 0)
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: '0.62rem', color: '#94a3b8' }}>
+                        Input Vector:
+                      </span>
+                      <span style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '0.68rem',
+                        fontWeight: 700,
+                        color: '#34d399',
+                        background: 'rgba(16, 185, 129, 0.1)',
+                        padding: '1px 6px',
+                        borderRadius: 3,
+                        border: '1px solid rgba(16, 185, 129, 0.25)',
+                      }}>
+                        |{simulationData.input_bits.slice().reverse().join('')}⟩
+                      </span>
+                      <span style={{ fontSize: '0.60rem', color: '#64748b' }}>
+                        (Hamming W = {inWeight})
+                      </span>
+                    </div>
+                  </div>
 
-                        return (
-                          <tr
-                            key={q}
-                            onClick={() => onSelectQubit(q)}
-                            style={{
-                              borderBottom: '1px solid rgba(51, 65, 85, 0.25)',
-                              background: isSelected ? 'rgba(56, 189, 248, 0.12)' : 'transparent',
-                              cursor: 'pointer',
-                              transition: 'background 0.1s ease',
-                            }}
-                          >
-                            <td style={{ padding: '5px 8px', fontWeight: 700, color: isSelected ? '#38bdf8' : '#cbd5e1' }}>
+                  {/* Input Pins Cards Grid */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                    gap: 6,
+                  }}>
+                    {Array.from({ length: numQubits }).map((_, q) => {
+                      const qName = simulationData.qubit_names[q] || `Q${q}`;
+                      const inBit = simulationData.input_bits[q];
+                      const sig = getQubitSignalInfo(q, qName, simulationData.circuit_name);
+                      const isSel = q === selectedQubit;
+
+                      return (
+                        <div
+                          key={`pin-in-card-${q}`}
+                          onClick={() => onSelectQubit(q)}
+                          style={{
+                            background: isSel ? 'rgba(56, 189, 248, 0.12)' : 'rgba(15, 23, 42, 0.5)',
+                            border: `1px solid ${isSel ? '#38bdf8' : 'rgba(51, 65, 85, 0.4)'}`,
+                            borderRadius: 6,
+                            padding: '6px 8px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 4,
+                            transition: 'all 0.12s ease',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                               <span style={{
+                                fontFamily: 'var(--font-mono)',
+                                fontSize: '0.64rem',
+                                fontWeight: 700,
                                 padding: '1px 5px',
                                 borderRadius: 3,
-                                background: isSelected ? '#38bdf8' : 'rgba(51, 65, 85, 0.5)',
-                                color: isSelected ? '#04060b' : '#f8fafc',
-                                fontFamily: 'var(--font-mono)',
+                                background: isSel ? '#38bdf8' : 'rgba(51, 65, 85, 0.6)',
+                                color: isSel ? '#04060b' : '#f8fafc',
                               }}>
                                 Q{q}
                               </span>
-                            </td>
-                            <td style={{ padding: '5px 8px', fontWeight: 600, color: '#f8fafc' }}>
-                              {qName}
-                            </td>
-                            <td style={{ padding: '5px 8px', textAlign: 'center', fontFamily: 'var(--font-mono)', color: inBit === 1 ? '#38bdf8' : '#94a3b8' }}>
-                              |{inBit}⟩
-                            </td>
-                            <td style={{ padding: '5px 8px', textAlign: 'center', fontFamily: 'var(--font-mono)', color: '#34d399' }}>
-                              {zExp}
-                            </td>
-                            <td style={{ padding: '5px 8px', textAlign: 'center', fontFamily: 'var(--font-mono)', color: outBit === 1 ? '#38bdf8' : '#94a3b8' }}>
-                              |{outBit}⟩
-                            </td>
-                            <td style={{ padding: '5px 8px' }}>
                               <span style={{
-                                fontSize: '0.6rem',
-                                fontWeight: 600,
-                                padding: '1px 6px',
-                                borderRadius: 3,
-                                background: `${role.color}20`,
-                                color: role.color,
-                                border: `1px solid ${role.color}40`,
+                                fontSize: '0.56rem',
+                                color: '#34d399',
+                                fontWeight: 700,
+                                background: 'rgba(16, 185, 129, 0.12)',
+                                padding: '1px 4px',
+                                borderRadius: 2,
                               }}>
-                                {role.role}
+                                PIN IN
                               </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                            </div>
+
+                            <span style={{
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: '0.74rem',
+                              fontWeight: 800,
+                              color: inBit === 1 ? '#34d399' : '#94a3b8',
+                              background: inBit === 1 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(148, 163, 184, 0.1)',
+                              padding: '1px 6px',
+                              borderRadius: 4,
+                              border: inBit === 1 ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(148, 163, 184, 0.2)',
+                            }}>
+                              |{inBit}⟩
+                            </span>
+                          </div>
+
+                          <div style={{ fontSize: '0.70rem', fontWeight: 700, color: '#f8fafc' }}>
+                            {sig.pinInName}
+                          </div>
+
+                          <div style={{ fontSize: '0.60rem', color: '#94a3b8' }}>
+                            {sig.pinInType}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* ─── SECTION 2: 🔄 INOUT WIRE TRANSFORMATION & TRAJECTORY ─── */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    paddingBottom: 4,
+                    borderBottom: '1px solid rgba(51, 65, 85, 0.4)',
+                    flexWrap: 'wrap',
+                    gap: 6,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Repeat size={13} color="#38bdf8" />
+                      <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        2. Inout Wire Trajectory — Unitary Evolution (t = 0 → T)
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '0.62rem', color: '#94a3b8' }}>
+                      Click any row to focus wire on 3D Bloch sphere & circuit
+                    </span>
+                  </div>
+
+                  <div style={{
+                    border: '1px solid var(--card-border)',
+                    borderRadius: 6,
+                    overflow: 'hidden',
+                    background: 'rgba(15, 23, 42, 0.4)',
+                  }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.66rem', textAlign: 'left' }}>
+                      <thead>
+                        <tr style={{ background: 'rgba(15, 23, 42, 0.8)', borderBottom: '1px solid var(--card-border)', color: '#64748b' }}>
+                          <th style={{ padding: '6px 8px' }}>Wire</th>
+                          <th style={{ padding: '6px 8px' }}>Pin In (t=0)</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'center' }}>Current ⟨Z⟩</th>
+                          <th style={{ padding: '6px 8px' }}>Inout Evolution Path</th>
+                          <th style={{ padding: '6px 8px' }}>Pin Out (t=T)</th>
+                          <th style={{ padding: '6px 8px' }}>Signal Role</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Array.from({ length: numQubits }).map((_, q) => {
+                          const qName = simulationData.qubit_names[q] || `Q${q}`;
+                          const inBit = simulationData.input_bits[q];
+                          const outBit = simulationData.output_bits[q];
+                          const bVec = stepData?.bloch_vectors?.[q];
+                          const zExp = bVec ? bVec.z.toFixed(2) : (inBit === 1 ? '-1.00' : '1.00');
+                          const sig = getQubitSignalInfo(q, qName, simulationData.circuit_name);
+                          const isSelected = q === selectedQubit;
+
+                          return (
+                            <tr
+                              key={q}
+                              onClick={() => onSelectQubit(q)}
+                              style={{
+                                borderBottom: '1px solid rgba(51, 65, 85, 0.25)',
+                                background: isSelected ? 'rgba(56, 189, 248, 0.12)' : 'transparent',
+                                cursor: 'pointer',
+                                transition: 'background 0.1s ease',
+                              }}
+                            >
+                              <td style={{ padding: '5px 8px', fontWeight: 700, color: isSelected ? '#38bdf8' : '#cbd5e1' }}>
+                                <span style={{
+                                  padding: '1px 5px',
+                                  borderRadius: 3,
+                                  background: isSelected ? '#38bdf8' : 'rgba(51, 65, 85, 0.5)',
+                                  color: isSelected ? '#04060b' : '#f8fafc',
+                                  fontFamily: 'var(--font-mono)',
+                                }}>
+                                  Q{q}
+                                </span>
+                              </td>
+                              <td style={{ padding: '5px 8px', fontFamily: 'var(--font-mono)' }}>
+                                <span style={{ color: inBit === 1 ? '#34d399' : '#94a3b8', fontWeight: 700 }}>
+                                  |{inBit}⟩
+                                </span>{' '}
+                                <span style={{ color: '#cbd5e1', fontFamily: 'system-ui, sans-serif', fontWeight: 600 }}>
+                                  {sig.pinInName}
+                                </span>
+                              </td>
+                              <td style={{ padding: '5px 8px', textAlign: 'center', fontFamily: 'var(--font-mono)', color: '#38bdf8', fontWeight: 700 }}>
+                                {zExp}
+                              </td>
+                              <td style={{ padding: '5px 8px', color: '#94a3b8', fontSize: '0.62rem' }}>
+                                {sig.inoutDesc}
+                              </td>
+                              <td style={{ padding: '5px 8px', fontFamily: 'var(--font-mono)' }}>
+                                <span style={{ color: outBit === 1 ? '#38bdf8' : '#94a3b8', fontWeight: 700 }}>
+                                  |{outBit}⟩
+                                </span>{' '}
+                                <span style={{ color: '#f8fafc', fontFamily: 'system-ui, sans-serif', fontWeight: 600 }}>
+                                  {sig.pinOutName}
+                                </span>
+                              </td>
+                              <td style={{ padding: '5px 8px' }}>
+                                <span style={{
+                                  fontSize: '0.6rem',
+                                  fontWeight: 600,
+                                  padding: '1px 6px',
+                                  borderRadius: 3,
+                                  background: `${sig.badgeColor}20`,
+                                  color: sig.badgeColor,
+                                  border: `1px solid ${sig.badgeColor}40`,
+                                }}>
+                                  {sig.role}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* ─── SECTION 3: 📤 PIN OUT (ALU RESULTS & MEASURED STATES) ─── */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    paddingBottom: 4,
+                    borderBottom: '1px solid rgba(51, 65, 85, 0.4)',
+                    flexWrap: 'wrap',
+                    gap: 6,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <ArrowUpFromLine size={13} color="#38bdf8" />
+                      <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        3. Pin Out — Measured Results & Invariant Preservation (t = T)
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: '0.62rem', color: '#94a3b8' }}>
+                        Output Vector:
+                      </span>
+                      <span style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '0.68rem',
+                        fontWeight: 700,
+                        color: '#38bdf8',
+                        background: 'rgba(56, 189, 248, 0.1)',
+                        padding: '1px 6px',
+                        borderRadius: 3,
+                        border: '1px solid rgba(56, 189, 248, 0.25)',
+                      }}>
+                        |{simulationData.output_bits.slice().reverse().join('')}⟩
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: isParityPreserved ? '#10b981' : '#ef4444', fontSize: '0.60rem', fontWeight: 700 }}>
+                        <ShieldCheck size={12} />
+                        <span>{isParityPreserved ? 'PARITY PRESERVED (ΔP=0)' : 'PARITY ERROR'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Highlighted Result Cards Grid */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                    gap: 8,
+                  }}>
+                    {/* Primary Result Y Card */}
+                    <div style={{
+                      background: 'rgba(15, 23, 42, 0.6)',
+                      border: '1px solid rgba(56, 189, 248, 0.35)',
+                      borderRadius: 6,
+                      padding: '8px 10px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 4,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '0.64rem', fontWeight: 700, color: '#38bdf8', textTransform: 'uppercase' }}>
+                          Primary ALU Result (Y)
+                        </span>
+                        <span style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: '0.76rem',
+                          fontWeight: 800,
+                          color: '#38bdf8',
+                          background: 'rgba(56, 189, 248, 0.15)',
+                          padding: '1px 6px',
+                          borderRadius: 3,
+                        }}>
+                          Q0 = |{simulationData.output_bits[0] ?? 0}⟩
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '0.66rem', color: '#cbd5e1' }}>
+                        {getQubitSignalInfo(0, simulationData.qubit_names[0] || 'Q0', simulationData.circuit_name).pinOutType}
+                      </div>
+                      <div style={{ fontSize: '0.58rem', color: '#94a3b8' }}>
+                        Delivered on physical inout Wire Q0 via full reversible ALU operator pipeline.
+                      </div>
+                    </div>
+
+                    {/* Carry Out Cout Card */}
+                    <div style={{
+                      background: 'rgba(15, 23, 42, 0.6)',
+                      border: '1px solid rgba(6, 182, 212, 0.35)',
+                      borderRadius: 6,
+                      padding: '8px 10px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 4,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '0.64rem', fontWeight: 700, color: '#06b6d4', textTransform: 'uppercase' }}>
+                          Carry / Borrow Out (Cout)
+                        </span>
+                        <span style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: '0.76rem',
+                          fontWeight: 800,
+                          color: '#06b6d4',
+                          background: 'rgba(6, 182, 212, 0.15)',
+                          padding: '1px 6px',
+                          borderRadius: 3,
+                        }}>
+                          Q1 = |{simulationData.output_bits[1] ?? 0}⟩
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '0.66rem', color: '#cbd5e1' }}>
+                        {getQubitSignalInfo(1, simulationData.qubit_names[1] || 'Q1', simulationData.circuit_name).pinOutType}
+                      </div>
+                      <div style={{ fontSize: '0.58rem', color: '#94a3b8' }}>
+                        Delivered on physical inout Wire Q1; cascades into next higher-order bit in multi-bit ALU.
+                      </div>
+                    </div>
+
+                    {/* Preserved Control Registers Card */}
+                    <div style={{
+                      background: 'rgba(15, 23, 42, 0.6)',
+                      border: '1px solid rgba(16, 185, 129, 0.35)',
+                      borderRadius: 6,
+                      padding: '8px 10px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 4,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '0.64rem', fontWeight: 700, color: '#10b981', textTransform: 'uppercase' }}>
+                          Preserved Control Lines
+                        </span>
+                        <span style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: '0.66rem',
+                          fontWeight: 700,
+                          color: '#10b981',
+                        }}>
+                          Zero Information Loss
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '0.64rem', color: '#cbd5e1', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        {numQubits >= 7 ? (
+                          <>
+                            <span>Q5 (S2): <strong style={{ fontFamily: 'var(--font-mono)', color: '#10b981' }}>|{simulationData.output_bits[5]}⟩</strong></span>
+                            <span>Q6 (S3): <strong style={{ fontFamily: 'var(--font-mono)', color: '#10b981' }}>|{simulationData.output_bits[6]}⟩</strong></span>
+                          </>
+                        ) : (
+                          <span>Preserved control registers match input bits exactly.</span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '0.58rem', color: '#94a3b8' }}>
+                        Multiplexer select registers remain uncorrupted for cascading control across ALU slices.
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             );
@@ -1250,20 +1691,248 @@ function getGateInfo(gateName: string) {
   }
 }
 
-function getQubitRole(qIdx: number, qName: string) {
-  const lowerName = qName.toLowerCase();
-  if (lowerName.includes('sum') || lowerName.includes('result') || lowerName.includes('diff') || lowerName.includes('out')) {
-    return { role: 'ALU Output / Result', color: '#38bdf8' };
+export interface QubitSignalInfo {
+  pinInName: string;
+  pinInType: string;
+  inoutDesc: string;
+  pinOutName: string;
+  pinOutType: string;
+  role: string;
+  badgeColor: string;
+}
+
+export function getQubitSignalInfo(qIdx: number, qName: string, circuitName: string = ''): QubitSignalInfo {
+  const cLower = circuitName.toLowerCase();
+  const qLower = qName.toLowerCase();
+
+  // 1-Bit ALU (7 qubits)
+  if (cLower.includes('alu') || cLower.includes('1-bit')) {
+    switch (qIdx) {
+      case 0:
+        return {
+          pinInName: 'Operand A',
+          pinInType: 'Primary Data Input',
+          inoutDesc: 'Reversible Data Bus: Undergoes full arithmetic/logic transform into primary ALU Result Y',
+          pinOutName: 'Result Y',
+          pinOutType: 'Primary ALU Output (Sum / Diff / Logic)',
+          role: 'ALU Output / Result Y',
+          badgeColor: '#38bdf8',
+        };
+      case 1:
+        return {
+          pinInName: 'Operand B',
+          pinInType: 'Secondary Data Input',
+          inoutDesc: 'Reversible Data Bus: Undergoes full arithmetic/logic transform into Carry / Borrow Out',
+          pinOutName: 'Carry Out (Cout)',
+          pinOutType: 'Arithmetic Carry / Borrow Flag',
+          role: 'Carry / Borrow Out Cout',
+          badgeColor: '#06b6d4',
+        };
+      case 2:
+        return {
+          pinInName: 'Cin / S0',
+          pinInType: 'Carry In / Function Select S0',
+          inoutDesc: 'Reversible Control Line: Cascaded through FALFG and FRG3 into Garbage G1',
+          pinOutName: 'Garbage G1',
+          pinOutType: 'Parity-Preserving Garbage Register',
+          role: 'Parity Ancilla G1',
+          badgeColor: '#a855f7',
+        };
+      case 3:
+        return {
+          pinInName: 'Select S1',
+          pinInType: 'ALU Function Select S1',
+          inoutDesc: 'Reversible Control Line: Selects arithmetic/logic mode in FALFG stage into G3',
+          pinOutName: 'Garbage G3',
+          pinOutType: 'Parity-Preserving Garbage Register',
+          role: 'Parity Ancilla G3',
+          badgeColor: '#ec4899',
+        };
+      case 4:
+        return {
+          pinInName: 'Mode Select M',
+          pinInType: 'Mode Select (0=Logic, 1=Arith)',
+          inoutDesc: 'Reversible Mode Control: Swapped through Fredkin multiplexer stage into G2',
+          pinOutName: 'Garbage G2',
+          pinOutType: 'Parity-Preserving Garbage Register',
+          role: 'Parity Ancilla G2',
+          badgeColor: '#f59e0b',
+        };
+      case 5:
+        return {
+          pinInName: 'Select S2',
+          pinInType: 'Fredkin Multiplexer Select S2',
+          inoutDesc: 'Reversible Preserved Control: Controls FRG1 & FRG2 without state corruption',
+          pinOutName: 'Preserved S2',
+          pinOutType: 'Preserved Control Register',
+          role: 'Preserved Control S2',
+          badgeColor: '#10b981',
+        };
+      case 6:
+        return {
+          pinInName: 'Select S3',
+          pinInType: 'Fredkin Multiplexer Select S3',
+          inoutDesc: 'Reversible Preserved Control: Controls FRG3 final multiplexer without state corruption',
+          pinOutName: 'Preserved S3',
+          pinOutType: 'Preserved Control Register',
+          role: 'Preserved Control S3',
+          badgeColor: '#10b981',
+        };
+      default:
+        break;
+    }
   }
-  if (lowerName.includes('cout') || lowerName.includes('bout') || lowerName.includes('carry')) {
-    return { role: 'Carry / Borrow Out', color: '#06b6d4' };
+
+  // 5x5 FALFG Gate
+  if (cLower.includes('falfg')) {
+    switch (qIdx) {
+      case 0:
+        return {
+          pinInName: 'Operand A',
+          pinInType: 'Primary Data Input',
+          inoutDesc: 'Reversible Data Bus: Generates Carry / Borrow P output',
+          pinOutName: 'Carry / Borrow P',
+          pinOutType: 'Arithmetic Carry/Borrow Output',
+          role: 'Carry / Borrow Out P',
+          badgeColor: '#06b6d4',
+        };
+      case 1:
+        return {
+          pinInName: 'Operand B',
+          pinInType: 'Secondary Data Input',
+          inoutDesc: 'Reversible Data Bus: Generates Sum / Difference Q output',
+          pinOutName: 'Sum / Diff Q',
+          pinOutType: 'Primary Arithmetic / Logic Output',
+          role: 'Sum / Diff Q',
+          badgeColor: '#38bdf8',
+        };
+      case 2:
+        return {
+          pinInName: 'Carry In C',
+          pinInType: 'Carry In / Function Select C',
+          inoutDesc: 'Reversible Control Wire: Undergoes reversible parity transform into R',
+          pinOutName: 'Garbage R (G1)',
+          pinOutType: 'Parity-Preserving Ancilla',
+          role: 'Garbage R (G1)',
+          badgeColor: '#a855f7',
+        };
+      case 3:
+        return {
+          pinInName: 'Select Line D',
+          pinInType: 'Add / Sub Select D',
+          inoutDesc: 'Reversible Control Wire: Directs addition vs subtraction into S',
+          pinOutName: 'Garbage S (G2)',
+          pinOutType: 'Parity-Preserving Ancilla',
+          role: 'Garbage S (G2)',
+          badgeColor: '#ec4899',
+        };
+      case 4:
+        return {
+          pinInName: 'Mode Select E',
+          pinInType: 'Mode Select E',
+          inoutDesc: 'Reversible Mode Wire: Carries logic mode selection into T',
+          pinOutName: 'Garbage T (G3)',
+          pinOutType: 'Parity-Preserving Ancilla',
+          role: 'Garbage T (G3)',
+          badgeColor: '#f59e0b',
+        };
+      default:
+        break;
+    }
   }
-  if (lowerName.includes('ctrl') || lowerName.includes('sel') || lowerName.includes('s0') || lowerName.includes('s1') || lowerName.includes('s2') || lowerName.includes('cin')) {
-    return { role: 'Control / Select Line', color: '#f59e0b' };
+
+  // 3x3 Fredkin CSWAP Gate
+  if (cLower.includes('fredkin') || cLower.includes('cswap')) {
+    switch (qIdx) {
+      case 0:
+        return {
+          pinInName: 'Control Input C',
+          pinInType: 'Swap Control Line',
+          inoutDesc: 'Reversible Control Wire: Controls conditional swap of target wires without state alteration',
+          pinOutName: 'Preserved Control C',
+          pinOutType: 'Preserved Control Register',
+          role: 'Preserved Control C',
+          badgeColor: '#10b981',
+        };
+      case 1:
+        return {
+          pinInName: 'Target Input In1 (B)',
+          pinInType: 'Target Data Line',
+          inoutDesc: 'Reversible Target Bus: If C=1 swapped with In2; if C=0 preserved unchanged',
+          pinOutName: 'Target Out Out1',
+          pinOutType: 'Conditional Swapped Data Output',
+          role: 'Swapped Out1',
+          badgeColor: '#38bdf8',
+        };
+      case 2:
+        return {
+          pinInName: 'Target Input In2 (C)',
+          pinInType: 'Target Data Line',
+          inoutDesc: 'Reversible Target Bus: If C=1 swapped with In1; if C=0 preserved unchanged',
+          pinOutName: 'Target Out Out2',
+          pinOutType: 'Conditional Swapped Data Output',
+          role: 'Swapped Out2',
+          badgeColor: '#06b6d4',
+        };
+      default:
+        break;
+    }
   }
-  if (lowerName.includes('garbage') || lowerName.includes('ancilla') || lowerName.includes('g1') || lowerName.includes('g2')) {
-    return { role: 'Reversible Ancilla', color: '#64748b' };
+
+  // Generic heuristic fallback
+  if (qLower.includes('sum') || qLower.includes('result') || qLower.includes('diff') || qLower.includes('y')) {
+    return {
+      pinInName: qName.split(' ')[0] || `In${qIdx}`,
+      pinInType: 'Data Input',
+      inoutDesc: 'Reversible Data Bus: Undergoes unitary evolution to produce primary computational result',
+      pinOutName: 'Result Y',
+      pinOutType: 'ALU / Computation Result',
+      role: 'ALU Output / Result',
+      badgeColor: '#38bdf8',
+    };
   }
-  return { role: 'Operand Input Wire', color: '#10b981' };
+  if (qLower.includes('cout') || qLower.includes('carry') || qLower.includes('bout')) {
+    return {
+      pinInName: qName.split(' ')[0] || `In${qIdx}`,
+      pinInType: 'Data Input',
+      inoutDesc: 'Reversible Data Bus: Generates carry/borrow output flag',
+      pinOutName: 'Carry Out',
+      pinOutType: 'Arithmetic Carry/Borrow Output',
+      role: 'Carry / Borrow Out',
+      badgeColor: '#06b6d4',
+    };
+  }
+  if (qLower.includes('ctrl') || qLower.includes('sel') || qLower.includes('cin') || qLower.includes('s0') || qLower.includes('s1')) {
+    return {
+      pinInName: qName.split(' ')[0] || `In${qIdx}`,
+      pinInType: 'Control / Select Input',
+      inoutDesc: 'Reversible Control Line: Steers conditional quantum logic transformations',
+      pinOutName: `Out_${qName.split(' ')[0]}`,
+      pinOutType: 'Preserved Control Register',
+      role: 'Control / Select Line',
+      badgeColor: '#f59e0b',
+    };
+  }
+  if (qLower.includes('garbage') || qLower.includes('ancilla') || qLower.includes('g1') || qLower.includes('g2')) {
+    return {
+      pinInName: qName.split(' ')[0] || `Ancilla${qIdx}`,
+      pinInType: 'Reversible Ancilla Input',
+      inoutDesc: 'Reversible Parity Ancilla: Preserves quantum information and unitary invertibility',
+      pinOutName: `Garbage_${qIdx}`,
+      pinOutType: 'Reversible Ancilla Output',
+      role: 'Reversible Ancilla',
+      badgeColor: '#64748b',
+    };
+  }
+
+  return {
+    pinInName: `Wire Input Q${qIdx}`,
+    pinInType: 'Quantum Register Input',
+    inoutDesc: 'Reversible Quantum Wire: Undergoes coherent unitary transformation |ψ(t)⟩ = U(t)|ψ(0)⟩',
+    pinOutName: `Wire Output Q${qIdx}`,
+    pinOutType: 'Measured Register State',
+    role: 'Quantum Wire',
+    badgeColor: '#10b981',
+  };
 }
 

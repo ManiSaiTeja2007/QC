@@ -403,19 +403,22 @@ select:hover {
   width: 88px;
   flex-shrink: 0;
   background: #04060b;
-  border-right: 1px solid #1e293b;
-  box-shadow: 4px 0 8px rgba(0, 0, 0, 0.45);
+  border-right: 1px solid rgba(51, 65, 85, 0.5);
   z-index: 10;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
   user-select: none;
+  padding: 0;
+  margin: 0;
 }
 
 .circuit-viewport {
-  padding: 6px 10px 6px 0;
+  padding: 0 10px 0 0;
+  margin: 0;
   flex: 1;
   min-width: 0;
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: auto;
   background: #04060b;
   position: relative;
   scrollbar-width: thin;
@@ -600,7 +603,7 @@ select:hover {
 }
 
 .svg-target-circle {
-  fill: #080d1a;
+  fill: #04060b;
   stroke: #38bdf8;
   stroke-width: 1.5;
   cursor: pointer;
@@ -608,7 +611,8 @@ select:hover {
 
 .svg-target-plus {
   stroke: #38bdf8;
-  stroke-width: 1.5;
+  stroke-width: 1.6;
+  stroke-linecap: round;
 }
 
 .svg-ctrl-line {
@@ -865,8 +869,10 @@ select:hover {
   padding: 6px 10px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  overflow-y: auto;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .palette-header h4 {
@@ -1267,9 +1273,10 @@ select:hover {
 }
 
 .builder-palette-dock {
-  width: 250px;
-  min-width: 250px;
-  max-width: 250px;
+  width: 310px;
+  min-width: 310px;
+  max-width: 310px;
+  height: 100%;
   display: flex;
   flex-direction: column;
   background: var(--card-bg);
@@ -1466,9 +1473,16 @@ select:hover {
   background: radial-gradient(circle at top left, #090e1a 0%, #030712 100%);
   border: 1px solid #1e293b;
   border-radius: 8px;
-  padding: 12px 14px;
-  margin-top: 12px;
+  padding: 10px 12px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  /* Fixed height so it never shifts the layout when gate changes */
+  height: 268px;
+  min-height: 268px;
+  max-height: 268px;
+  flex-shrink: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .formula-header {
@@ -1515,56 +1529,61 @@ select:hover {
 }
 
 .formula-section {
-  margin-bottom: 10px;
+  margin-bottom: 6px;
+  flex-shrink: 0;
 }
 
 .formula-sec-lbl {
-  font-size: 0.65rem;
+  font-size: 0.60rem;
   font-weight: 700;
   color: #64748b;
   letter-spacing: 0.06em;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
 }
 
 .formula-ket-box {
   background: #060b17;
   border: 1px solid #131d31;
   border-radius: 6px;
-  padding: 6px 10px;
+  padding: 5px 8px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
+  overflow: hidden;
 }
 
 .ket-eq-row {
   display: flex;
   align-items: baseline;
-  gap: 6px;
+  gap: 4px;
   font-family: var(--font-mono, monospace);
-  font-size: 0.78rem;
+  font-size: 0.70rem;
   color: #e2e8f0;
 }
 
 .ket-eq-bullet {
   color: #38bdf8;
-  font-size: 0.65rem;
+  font-size: 0.60rem;
 }
 
 .ket-eq-text {
   font-weight: 500;
   letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .formula-matrix-container {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   background: #060b17;
   border: 1px solid #131d31;
   border-radius: 6px;
-  padding: 8px 12px;
-  overflow-x: auto;
+  padding: 5px 8px;
+  overflow: hidden;
 }
 
 .matrix-scalar-prefix {
