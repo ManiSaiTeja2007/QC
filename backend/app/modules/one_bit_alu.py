@@ -29,7 +29,7 @@ ALU_LOGIC_OPERATIONS: Dict[str, Dict[str, Any]] = {
     "Complement B": {"S0": 0, "S1": 1, "S2": 1, "S3": 1, "M": 0, "func": lambda a, b: 1 - b},
 }
 
-ALU_ARITHMETIC_OPERATIONS: Dict[str, Dict[str, Any]] = {
+TABLE_VI_ARITHMETIC_OPERATIONS: Dict[str, Dict[str, Any]] = {
     "Half Adder": {
         "S0": 0, "S1": 0, "S2": 1, "S3": 0, "M": 1,
         "sum_func": lambda a, b, cin=0: a ^ b,
@@ -40,15 +40,25 @@ ALU_ARITHMETIC_OPERATIONS: Dict[str, Dict[str, Any]] = {
         "diff_func": lambda a, b, bin_in=0: a ^ b,
         "borrow_func": lambda a, b, bin_in=0: (1 - a) & b
     },
-    "Full Adder": {
-        "S0": "Cin", "S1": 0, "S2": 1, "S3": 0, "M": 1,
-        "sum_func": lambda a, b, cin: a ^ b ^ cin,
-        "carry_func": lambda a, b, cin: (a & b) | (b & cin) | (a & cin)
+    "Full Adder (Cin=0)": {
+        "S0": 0, "S1": 0, "S2": 1, "S3": 0, "M": 1,
+        "sum_func": lambda a, b, cin=0: a ^ b,
+        "carry_func": lambda a, b, cin=0: a & b
     },
-    "Full Subtractor": {
-        "S0": "Bin", "S1": 1, "S2": 1, "S3": 0, "M": 1,
-        "diff_func": lambda a, b, bin_in: a ^ b ^ bin_in,
-        "borrow_func": lambda a, b, bin_in: ((1 - a) & b) | ((1 - a) & bin_in) | (b & bin_in)
+    "Full Adder (Cin=1)": {
+        "S0": 1, "S1": 0, "S2": 1, "S3": 0, "M": 1,
+        "sum_func": lambda a, b, cin=1: a ^ b ^ 1,
+        "carry_func": lambda a, b, cin=1: (a & b) | (b & 1) | (a & 1)
+    },
+    "Full Subtractor (Bin=0)": {
+        "S0": 0, "S1": 1, "S2": 1, "S3": 0, "M": 1,
+        "diff_func": lambda a, b, bin_in=0: a ^ b,
+        "borrow_func": lambda a, b, bin_in=0: (1 - a) & b
+    },
+    "Full Subtractor (Bin=1)": {
+        "S0": 1, "S1": 1, "S2": 1, "S3": 0, "M": 1,
+        "diff_func": lambda a, b, bin_in=1: a ^ b ^ 1,
+        "borrow_func": lambda a, b, bin_in=1: ((1 - a) & b) | ((1 - a) & 1) | (b & 1)
     },
     "Increment A": {
         "B": 0, "S0": 1, "S1": 0, "S2": 1, "S3": 0, "M": 1,
@@ -60,10 +70,36 @@ ALU_ARITHMETIC_OPERATIONS: Dict[str, Dict[str, Any]] = {
         "diff_func": lambda a, b=0, bin_in=1: a ^ 1,
         "borrow_func": lambda a, b=0, bin_in=1: 1 - a
     },
-    "Set": {"B": 0, "S0": 0, "S1": 0, "S2": 1, "S3": 1, "M": 1, "func": lambda a: 1},
-    "Reset": {"B": 0, "S0": 0, "S1": 1, "S2": 1, "S3": 1, "M": 1, "func": lambda a: 0},
+    "Add with Carry": {
+        "S0": 1, "S1": 0, "S2": 1, "S3": 0, "M": 1,
+        "sum_func": lambda a, b, cin=1: a ^ b ^ 1,
+        "carry_func": lambda a, b, cin=1: (a & b) | b | a
+    },
+    "Subtract with Borrow": {
+        "S0": 1, "S1": 1, "S2": 1, "S3": 0, "M": 1,
+        "diff_func": lambda a, b, bin_in=1: a ^ b ^ 1,
+        "borrow_func": lambda a, b, bin_in=1: ((1 - a) & b) | (1 - a) | b
+    },
     "Transfer A": {"B": 0, "S0": 0, "S1": 0, "S2": 1, "S3": 0, "M": 1, "func": lambda a: a},
     "Complement A": {"B": 0, "S0": 0, "S1": 1, "S2": 1, "S3": 0, "M": 1, "func": lambda a: 1 - a},
+    "Set": {"B": 0, "S0": 0, "S1": 0, "S2": 1, "S3": 1, "M": 1, "func": lambda a: 1},
+    "Reset": {"B": 0, "S0": 0, "S1": 1, "S2": 1, "S3": 1, "M": 1, "func": lambda a: 0},
+    "Transfer B (Arith)": {"S0": 0, "S1": 0, "S2": 1, "S3": 1, "M": 1, "func": lambda a, b: b},
+    "Complement B (Arith)": {"S0": 0, "S1": 1, "S2": 1, "S3": 1, "M": 1, "func": lambda a, b: 1 - b},
+}
+
+ALU_ARITHMETIC_OPERATIONS: Dict[str, Dict[str, Any]] = {
+    **TABLE_VI_ARITHMETIC_OPERATIONS,
+    "Full Adder": {
+        "S0": "Cin", "S1": 0, "S2": 1, "S3": 0, "M": 1,
+        "sum_func": lambda a, b, cin: a ^ b ^ cin,
+        "carry_func": lambda a, b, cin: (a & b) | (b & cin) | (a & cin)
+    },
+    "Full Subtractor": {
+        "S0": "Bin", "S1": 1, "S2": 1, "S3": 0, "M": 1,
+        "diff_func": lambda a, b, bin_in: a ^ b ^ bin_in,
+        "borrow_func": lambda a, b, bin_in: ((1 - a) & b) | ((1 - a) & bin_in) | (b & bin_in)
+    },
 }
 
 ALL_ALU_OPERATIONS = {**ALU_LOGIC_OPERATIONS, **ALU_ARITHMETIC_OPERATIONS}

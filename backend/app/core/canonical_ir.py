@@ -259,8 +259,7 @@ def build_canonical_circuit_ir(
     p_in = sum(input_bits) % 2
     final_probs = simulation_steps[-1]["probabilities"]
     f_state = max(final_probs, key=final_probs.get)
-    f_dec = int(f_state, 2)
-    f_bits = [(f_dec >> i) & 1 for i in range(n_qubits)]
+    f_bits = [int(f_state[i]) for i in range(n_qubits)]
     p_out = sum(f_bits) % 2
 
     return {

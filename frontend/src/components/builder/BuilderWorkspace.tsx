@@ -9,6 +9,7 @@ import { fetchCustomSimulationData } from '../../services/api';
 import { SimulationPayload } from '../../types/simulation';
 import { CircuitFileSchema } from '../../types/circuit';
 import { SaveCircuitModal } from '../modals/SaveCircuitModal';
+import { CodeExportModal } from '../modals/CodeExportModal';
 import { IOContract, makeDefaultIOContract } from '../../types/io_contract';
 
 interface BuilderWorkspaceProps {
@@ -62,6 +63,7 @@ export const BuilderWorkspace: React.FC<BuilderWorkspaceProps> = ({
     readonly: boolean;
   } | null>(null);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
 
   // Notify parent on circuit edits for live cross-synchronization with Verilog Studio
@@ -390,6 +392,7 @@ export const BuilderWorkspace: React.FC<BuilderWorkspaceProps> = ({
             setLoadedCircuitMeta(null);
           }}
           onSaveToLibrary={() => setIsSaveModalOpen(true)}
+          onExportCode={() => setIsExportModalOpen(true)}
         />
 
         {/* Transport & Live Step Simulation Dock */}
@@ -465,6 +468,15 @@ export const BuilderWorkspace: React.FC<BuilderWorkspaceProps> = ({
           }}
         />
       )}
+
+      {/* Multi-Format Code Export Modal */}
+      <CodeExportModal
+        customGates={placedGates}
+        numQubits={numQubits}
+        circuitName={loadedCircuitMeta?.name || 'Builder_Custom_Circuit'}
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+      />
 
       {/* Save Feedback Banner */}
       {saveSuccessMsg && (

@@ -18,6 +18,7 @@ interface CircuitCanvasProps {
   onRemoveGate: (gateId: string) => void;
   onClearCircuit: () => void;
   onSaveToLibrary?: () => void;
+  onExportCode?: () => void;
 }
 
 export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
@@ -32,6 +33,7 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
   onRemoveGate,
   onClearCircuit,
   onSaveToLibrary,
+  onExportCode,
 }) => {
   const [selectedGateId, setSelectedGateId] = useState<string | null>(null);
   const [customTargetQubit, setCustomTargetQubit] = useState<number>(1);
@@ -130,6 +132,24 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
           <button className="btn btn-xs btn-danger" onClick={onClearCircuit}>
             Clear Circuit
           </button>
+          {onExportCode && (
+            <button
+              className="btn btn-xs"
+              onClick={onExportCode}
+              style={{
+                background: 'rgba(2, 132, 199, 0.8)',
+                color: '#fff',
+                border: '1px solid rgba(56, 189, 248, 0.4)',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
+              <span>📥</span>
+              <span>Export Code</span>
+            </button>
+          )}
           <button
             className="btn btn-xs"
             onClick={onSaveToLibrary}

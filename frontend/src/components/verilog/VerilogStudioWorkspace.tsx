@@ -688,7 +688,7 @@ endmodule
       {/* Slide-Up Bottom Analytics Drawer */}
       <footer
         className="v-drawer-container"
-        style={{ height: drawerCollapsed ? 38 : 300 }}
+        style={{ height: drawerCollapsed ? 38 : 390 }}
       >
         {/* Drawer Header & Tabs */}
         <div className="v-drawer-header">

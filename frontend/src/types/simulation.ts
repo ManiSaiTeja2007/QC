@@ -57,7 +57,68 @@ export interface SimulationPayload {
   primitive_gates: PrimitiveGate[];
   steps: SimulationStep[];
   metrics: CircuitMetrics;
+  alu_metadata?: any;
 }
+
+export interface PhysicalQubitNodeInfo {
+  id: number;
+  x: number;
+  y: number;
+  z: number;
+  t1_us: number;
+  t2_us: number;
+  readout_err: number;
+}
+
+export interface CouplingEdgeInfo {
+  u: number;
+  v: number;
+  cx_error: number;
+  cx_duration_ns: number;
+}
+
+export interface TopologyInfo {
+  name: string;
+  num_qubits: number;
+  nodes: PhysicalQubitNodeInfo[];
+  edges: CouplingEdgeInfo[];
+}
+
+export interface EdgeSwapHeatmapItem {
+  u: number;
+  v: number;
+  swaps: number;
+}
+
+export interface RoutingTelemetry {
+  topology: string;
+  num_qubits: number;
+  initial_layout: Record<string, number>;
+  final_layout: Record<string, number>;
+  num_swaps: number;
+  added_cx_count: number;
+  depth: number;
+  duration_ns: number;
+  estimated_fidelity: number;
+  heatmap: EdgeSwapHeatmapItem[];
+}
+
+export interface RouteTopologyResponse {
+  status: string;
+  topology: TopologyInfo;
+  routing: RoutingTelemetry;
+  routed_circuit_qasm: string;
+}
+
+export interface TopologyCatalogItem {
+  id: string;
+  name: string;
+  qubits: number;
+  architecture: string;
+  lattice: string;
+  description: string;
+}
+
 
 export interface SimulationRequestPayload {
   architecture: string;

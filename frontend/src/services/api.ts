@@ -1,4 +1,9 @@
-import { SimulationPayload, SimulationRequestPayload } from '../types/simulation';
+import {
+  SimulationPayload,
+  SimulationRequestPayload,
+  RouteTopologyResponse,
+  TopologyCatalogItem,
+} from '../types/simulation';
 import {
   CircuitFileSchema,
   CircuitIndexResponse,
@@ -367,3 +372,166 @@ export async function exportDualCircuits(payload: {
   return response.json();
 }
 
+
+// ==============================================================================
+// 🔬 Dedicated Quantum ALU & Physical Noise API (IEEE TETC 2026 Table VI)
+// ==============================================================================
+
+export interface AluOperationSpec {
+  name: string;
+  category: 'logic' | 'arithmetic';
+  m: number;
+  s0: number;
+  s0_label?: string;
+  s1: number;
+  s2: number;
+  s3: number;
+  b_fixed?: number | null;
+  formula: string;
+  description: string;
+}
+
+export interface AluOperationsResponse {
+  total_operations: number;
+  logic_operations: AluOperationSpec[];
+  arithmetic_operations: AluOperationSpec[];
+  qubit_mapping: { index: number; name: string; role: string }[];
+}
+
+export interface AluSimulateOpRequest {
+  operation: string;
+  a: number;
+  b: number;
+  cin: number;
+  synthesis: string;
+}
+
+export interface AluMetadata {
+  operation: string;
+  mode: 'logic' | 'arithmetic';
+  operands: { a: number; b: number; cin: number };
+  controls: { M: number; S0: number; S1: number; S2: number; S3: number };
+  expected_result: number | null;
+  expected_carry: number | null;
+  measured_result: number;
+  measured_carry: number;
+  result_match: boolean;
+  parity_preserved: boolean;
+}
+
+export interface NoiseSimulationRequest {
+  architecture: string;
+  synthesis: string;
+  input_bits: number[];
+  depolarizing_p: number;
+  t1_us: number;
+  t2_us: number;
+}
+
+export interface NoiseSimulationResponse {
+  architecture: string;
+  input_bits: number[];
+  state_fidelity: number;
+  purity: number;
+  error_margin_passed: boolean;
+  depolarizing_p: number;
+  t1_us: number;
+  t2_us: number;
+  probabilities: Record<string, number>;
+}
+
+export interface CodeExportRequest {
+  architecture?: string;
+  synthesis?: string;
+  custom_gates?: any[];
+  num_qubits?: number;
+  circuit_name?: string;
+}
+
+export interface CodeExportResponse {
+  circuit_name: string;
+  num_qubits: number;
+  qasm2: string;
+  qasm3: string;
+  qiskit_python: string;
+  verilog_hdl: string;
+}
+
+export async function fetchAluOperations(): Promise<AluOperationsResponse> {
+  const response = await fetch(`${API_BASE}/alu/operations`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ALU operations: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function simulateAluOperation(payload: AluSimulateOpRequest): Promise<SimulationPayload> {
+  const response = await fetch(`${API_BASE}/alu/simulate-op`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: response.statusText }));
+    throw new Error(err.detail || `ALU simulation failed: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function simulatePhysicalNoise(payload: NoiseSimulationRequest): Promise<NoiseSimulationResponse> {
+  const response = await fetch(`${API_BASE}/alu/simulate-noise`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: response.statusText }));
+    throw new Error(err.detail || `Noise simulation failed: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function exportCircuitCode(payload: CodeExportRequest): Promise<CodeExportResponse> {
+  const response = await fetch(`${API_BASE}/alu/export-code`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: response.statusText }));
+    throw new Error(err.detail || `Code export failed: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+// 🌐 Q-EDA Physical QPU Topology & SABRE Routing API (/api/qeda)
+export async function fetchAvailableTopologies(): Promise<TopologyCatalogItem[]> {
+  const response = await fetch(`${API_BASE}/qeda/topologies`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch topologies: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export interface RouteTopologyPayload {
+  circuit_name: string;
+  synthesis: string;
+  target_topology: string;
+  noise_aware: boolean;
+  bidirectional: boolean;
+  custom_gates?: any[];
+  num_qubits?: number;
+}
+
+export async function routeCircuitToHardware(payload: RouteTopologyPayload): Promise<RouteTopologyResponse> {
+  const response = await fetch(`${API_BASE}/qeda/route-topology`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: response.statusText }));
+    throw new Error(err.detail || `Hardware routing failed: ${response.statusText}`);
+  }
+  return response.json();
+}

@@ -10,6 +10,10 @@ import { SimulationPayload } from '../../types/simulation';
 import { CircuitIndexEntry } from '../../types/circuit';
 import { circuitStore } from '../../services/circuitStore';
 import { GateInfoModal } from '../GateInfoModal';
+import { AluOperationsDeck } from '../alu/AluOperationsDeck';
+import { PhysicalNoiseDrawer } from '../alu/PhysicalNoiseDrawer';
+import { CodeExportModal } from '../modals/CodeExportModal';
+import { HeavyHexPanel } from '../HeavyHexPanel';
 
 interface LiveSimulationWorkspaceProps {
   initialArchitecture?: string;
@@ -28,6 +32,7 @@ export const LiveSimulationWorkspace: React.FC<LiveSimulationWorkspaceProps> = (
   const [architecture, setArchitectureState] = useState<string>(initialArchitecture);
   const [synthesis, setSynthesis] = useState<string>('clifford_t');
   const [preset, setPreset] = useState<string>('Full Adder');
+  const [rightPanelView, setRightPanelView] = useState<'bloch' | 'heavy_hex'>('bloch');
   const [availableCircuits, setAvailableCircuits] = useState<CircuitIndexEntry[]>([]);
 
   // Fetch all stored library circuits via shared circuitStore
@@ -68,6 +73,8 @@ export const LiveSimulationWorkspace: React.FC<LiveSimulationWorkspaceProps> = (
     qubits: number[];
     stepIndex: number;
   } | null>(null);
+  const [isNoiseDrawerOpen, setIsNoiseDrawerOpen] = useState<boolean>(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
 
   const playTimerRef = useRef<number | null>(null);
 
@@ -208,7 +215,41 @@ export const LiveSimulationWorkspace: React.FC<LiveSimulationWorkspaceProps> = (
         >
           ⚡ Run Simulation
         </button>
+
+        {/* Code Export button */}
+        <button
+          className="btn btn-secondary"
+          style={{
+            marginLeft: 6,
+            background: 'rgba(30, 41, 59, 0.8)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            color: '#f8fafc',
+            padding: '5px 12px',
+            borderRadius: 6,
+            fontSize: '0.74rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+          onClick={() => setIsExportModalOpen(true)}
+        >
+          📥 Export Code
+        </button>
       </div>
+
+      {/* Dedicated IEEE TETC Table VI ALU Operations Command Dock */}
+      {architecture === '1-bit-alu' && (
+        <AluOperationsDeck
+          synthesis={synthesis}
+          onSimulationLoaded={(data) => {
+            setSimulationData(data);
+            if (data.input_bits) {
+              setInputBits(data.input_bits);
+            }
+            setCurrentStep(0);
+          }}
+          onOpenNoiseStudio={() => setIsNoiseDrawerOpen(true)}
+        />
+      )}
 
       {/* 1. SubBar Metrics & Bit Toggles */}
       <SubBar
@@ -264,7 +305,7 @@ export const LiveSimulationWorkspace: React.FC<LiveSimulationWorkspaceProps> = (
           onBasisChange={setMeasurementBasis}
         />
 
-        {/* Panel 3: Docked Right Inspector (3D Bloch Studio) */}
+        {/* Panel 3: Docked Right Inspector (3D Bloch & Heavy-Hex QPU Studio) */}
         <div className="card panel-bloch-wrapper" style={{ display: 'flex', flexDirection: 'column' }}>
           <div style={{
             display: 'flex',
@@ -275,38 +316,79 @@ export const LiveSimulationWorkspace: React.FC<LiveSimulationWorkspaceProps> = (
             background: 'var(--header-bg)',
             flexShrink: 0,
           }}>
-            <span style={{
-              fontSize: '0.75rem',
-              fontWeight: 600,
-              color: 'var(--text-main)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-            }}>
-              🌐 3D Bloch Studio
-            </span>
+            {/* View Switcher Tabs */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <button
+                onClick={() => setRightPanelView('bloch')}
+                style={{
+                  fontSize: '0.72rem',
+                  fontWeight: 600,
+                  padding: '3px 8px',
+                  borderRadius: 6,
+                  border: rightPanelView === 'bloch' ? '1px solid var(--accent-cyan)' : '1px solid transparent',
+                  background: rightPanelView === 'bloch' ? 'rgba(56, 189, 248, 0.12)' : 'transparent',
+                  color: rightPanelView === 'bloch' ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                🌐 Bloch Spheres
+              </button>
+              <button
+                onClick={() => setRightPanelView('heavy_hex')}
+                style={{
+                  fontSize: '0.72rem',
+                  fontWeight: 600,
+                  padding: '3px 8px',
+                  borderRadius: 6,
+                  border: rightPanelView === 'heavy_hex' ? '1px solid #f59e0b' : '1px solid transparent',
+                  background: rightPanelView === 'heavy_hex' ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
+                  color: rightPanelView === 'heavy_hex' ? '#f59e0b' : 'var(--text-muted)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                ⬡ Heavy-Hex QPU
+              </button>
+            </div>
             <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
               Three.js WebGL
             </span>
           </div>
 
           <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-            <StateSummaryStrip
-              stepData={stepData}
-              selectedQubit={selectedQubit}
-              qubitNames={qubitNames}
-              viewMode={viewMode}
-              onSelectQubit={setSelectedQubit}
-            />
-            <BlochPanel
-              numQubits={simulationData?.num_qubits || 7}
-              qubitNames={qubitNames}
-              stepData={stepData}
-              selectedQubit={selectedQubit}
-              viewMode={viewMode}
-              onViewModeChange={setViewMode}
-              onSelectQubit={setSelectedQubit}
-            />
+            {rightPanelView === 'bloch' ? (
+              <>
+                <StateSummaryStrip
+                  stepData={stepData}
+                  selectedQubit={selectedQubit}
+                  qubitNames={qubitNames}
+                  viewMode={viewMode}
+                  onSelectQubit={setSelectedQubit}
+                />
+                <BlochPanel
+                  numQubits={simulationData?.num_qubits || 7}
+                  qubitNames={qubitNames}
+                  stepData={stepData}
+                  selectedQubit={selectedQubit}
+                  viewMode={viewMode}
+                  onViewModeChange={setViewMode}
+                  onSelectQubit={setSelectedQubit}
+                />
+              </>
+            ) : (
+              <HeavyHexPanel
+                circuitName={architecture}
+                synthesis={synthesis}
+                numQubits={simulationData?.num_qubits || 7}
+              />
+            )}
           </div>
         </div>
       </main>
@@ -321,6 +403,24 @@ export const LiveSimulationWorkspace: React.FC<LiveSimulationWorkspaceProps> = (
           onClose={() => setActiveModalGate(null)}
         />
       )}
+
+      {/* Physical Superconducting Transmon Noise Studio */}
+      <PhysicalNoiseDrawer
+        architecture={architecture}
+        synthesis={synthesis}
+        inputBits={inputBits}
+        isOpen={isNoiseDrawerOpen}
+        onClose={() => setIsNoiseDrawerOpen(false)}
+      />
+
+      {/* Multi-Format Code Export Modal */}
+      <CodeExportModal
+        architecture={architecture}
+        synthesis={synthesis}
+        circuitName={`1_bit_alu_${synthesis}`}
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+      />
     </div>
   );
 };

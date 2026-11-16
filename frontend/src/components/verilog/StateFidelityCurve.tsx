@@ -22,11 +22,11 @@ export const StateFidelityCurve: React.FC<StateFidelityCurveProps> = ({
 
   const numPoints = fidelityCurve.length;
   const svgWidth = 640;
-  const svgHeight = 220;
-  const paddingLeft = 50;
+  const svgHeight = 240;
+  const paddingLeft = 55;
   const paddingRight = 30;
   const paddingTop = 25;
-  const paddingBottom = 40;
+  const paddingBottom = 48;
 
   const chartWidth = svgWidth - paddingLeft - paddingRight;
   const chartHeight = svgHeight - paddingTop - paddingBottom;
@@ -106,7 +106,11 @@ export const StateFidelityCurve: React.FC<StateFidelityCurveProps> = ({
                   x={paddingLeft - 8}
                   y={yPos + 4}
                   textAnchor="end"
-                  className="fill-slate-500 text-[10px]"
+                  fill="#ffffff"
+                  style={{ fill: '#ffffff', color: '#ffffff' }}
+                  fontSize="11"
+                  fontWeight="600"
+                  className="select-none font-mono"
                 >
                   {level.toFixed(2)}
                 </text>
@@ -179,7 +183,11 @@ export const StateFidelityCurve: React.FC<StateFidelityCurveProps> = ({
                 x={getX(idx)}
                 y={paddingTop + chartHeight + 18}
                 textAnchor="middle"
-                className="fill-slate-400 text-[10px]"
+                fill="#ffffff"
+                style={{ fill: '#ffffff', color: '#ffffff' }}
+                fontSize="11"
+                fontWeight="500"
+                className="select-none font-mono"
               >
                 S{idx}
               </text>

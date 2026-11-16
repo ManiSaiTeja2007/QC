@@ -29,10 +29,17 @@ class TestQuantumStudioChromeDevTools(unittest.TestCase):
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--window-size=1600,980")
+        options.add_argument("--force-dark-mode")
         options.set_capability("goog:loggingPrefs", {"browser": "ALL"})
 
         cls.driver = webdriver.Chrome(options=options)
         cls.driver.get(f"{BASE_URL}/#builder")
+        time.sleep(1.0)
+        try:
+            cls.driver.execute_script("localStorage.setItem('qc_studio_theme', 'dark'); document.documentElement.setAttribute('data-theme', 'dark');")
+        except Exception:
+            pass
+        cls.driver.refresh()
         time.sleep(2.5)
 
     @classmethod
@@ -40,9 +47,14 @@ class TestQuantumStudioChromeDevTools(unittest.TestCase):
         cls.driver.quit()
 
     def snapshot(self, filename: str):
+        try:
+            self.driver.execute_script("document.documentElement.setAttribute('data-theme', 'dark');")
+        except Exception:
+            pass
+        time.sleep(0.5)
         filepath = os.path.join(IMAGES_DIR, filename)
         self.driver.save_screenshot(filepath)
-        print(f"  📸 Captured snapshot: {filepath} ({os.path.getsize(filepath):,} bytes)")
+        print(f"  📸 Captured dark-mode snapshot: {filepath} ({os.path.getsize(filepath):,} bytes)")
 
     def test_01_builder_workspace_and_snapshot(self):
         """Verify Circuit Builder workspace layout, palette, canvas, and 3D Bloch spheres."""
@@ -278,6 +290,31 @@ class TestQuantumStudioChromeDevTools(unittest.TestCase):
                 print(f"    - {err.get('message')}")
         else:
             print("  ✅ Test 07: Chrome DevTools console audit clean (0 severe unhandled exceptions)")
+
+    def test_08_heavy_hex_qpu_studio(self):
+        """Verify 3D Heavy-Hex QPU Panel tab switching and routing visualization."""
+        driver = self.driver
+        # Click Live Simulation top nav button
+        live_btn = WebDriverWait(driver, 5).until(
+            EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Live Simulation')]"))
+        )
+        live_btn.click()
+        time.sleep(1.5)
+
+        # Click the Heavy-Hex QPU tab button
+        heavy_hex_tab = WebDriverWait(driver, 5).until(
+            EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Heavy-Hex QPU')]"))
+        )
+        heavy_hex_tab.click()
+        time.sleep(2.0)
+
+        # Assert canvas exists
+        canvases = driver.find_elements(By.TAG_NAME, "canvas")
+        self.assertGreater(len(canvases), 0)
+
+        # Capture snapshot
+        self.snapshot("16_heavy_hex_3d_studio.png")
+        print("  ✅ Captured snapshot: 16_heavy_hex_3d_studio.png (Pillar D Heavy-Hex QPU)")
 
 if __name__ == "__main__":
     unittest.main()

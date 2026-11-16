@@ -155,3 +155,83 @@ This living reference document catalogs all public classes, functions, schemas, 
 
 
 
+
+---
+
+## 9. Physical Transmon Noise Models & Simulation Engine
+
+| Symbol | File | Type | Description |
+|---|---|---|---|
+| [`TransmonNoiseConfig`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/simulation/noise_models.py#L32-L46) | `noise_models.py` | Dataclass | Hardware calibration parameters ($T_1=110\,\mu\text{s}$, $T_2=85\,\mu\text{s}$, $t_{1q}=35\,\text{ns}$, $t_{2q}=280\,\text{ns}$, $p_{1q}=0.0015$, $p_{2q}=0.012$). |
+| [`build_depolarizing_noise_model`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/simulation/noise_models.py#L48-L62) | `noise_models.py` | Function | Constructs stochastic Pauli gate infidelity noise model. |
+| [`build_amplitude_damping_noise_model`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/simulation/noise_models.py#L64-L85) | `noise_models.py` | Function | Constructs $T_1$ energy relaxation noise model with Kraus operators. |
+| [`build_phase_damping_noise_model`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/simulation/noise_models.py#L87-L108) | `noise_models.py` | Function | Constructs pure $T_2$ environmental dephasing noise model. |
+| [`build_thermal_relaxation_noise_model`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/simulation/noise_models.py#L110-L129) | `noise_models.py` | Function | Constructs combined $T_1$ relaxation and $T_2$ dephasing thermal noise model. |
+| [`build_transmon_composite_noise_model`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/simulation/noise_models.py#L131-L151) | `noise_models.py` | Function | Constructs composite Falcon/Eagle transmon noise model combining relaxation and depolarizing errors. |
+| [`simulate_noisy_density_matrix`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/simulation/noise_models.py#L153-L188) | `noise_models.py` | Function | Simulates open-system density matrix $\rho_{\text{noisy}}$ and evaluates state fidelity $F(\rho, |\psi_{\text{ideal}}\rangle)$. |
+| [`simulate_noisy_shots`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/simulation/noise_models.py#L190-L208) | `noise_models.py` | Function | Runs Monte Carlo shot sampling under physical noise channels. |
+| [`evaluate_noise_fidelities`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/simulation/noise_models.py#L210-L230) | `noise_models.py` | Function | Evaluates circuit state fidelity across all 4 noise channels for a given input state. |
+| [`run_figure12_noisy_reproduction`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/simulation/fidelity_simulator.py#L141-L194) | `fidelity_simulator.py` | Function | Dynamically evaluates empirical state fidelity distributions across basis states under all 4 transmon channels. |
+| [`build_parity_projector`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/simulation/noise_models.py#L237-L253) | `noise_models.py` | Function | Constructs $2^n \times 2^n$ diagonal parity subspace projector $\Pi_{\text{valid}}$. |
+| [`apply_parity_postselection`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/simulation/noise_models.py#L255-L274) | `noise_models.py` | Function | Applies $\Pi_{\text{valid}} \rho \Pi_{\text{valid}}$ and computes acceptance probability $P_{\text{accept}}$. |
+| [`scale_transmon_noise_config`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/simulation/noise_models.py#L276-L289) | `noise_models.py` | Function | Scales hardware error parameters for Zero-Noise Extrapolation (ZNE). |
+| [`compute_zne_richardson_fidelity`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/simulation/noise_models.py#L291-L305) | `noise_models.py` | Function | Computes two-point Richardson linear ZNE: $F_{\text{ZNE}} = (c F_1 - F_2)/(c-1)$. |
+| [`simulate_parity_mitigated_density_matrix`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/simulation/noise_models.py#L307-L359) | `noise_models.py` | Function | Computes raw, parity-mitigated, acceptance rate, and ZNE fidelities via density matrix simulation. |
+| [`simulate_parity_mitigated_shots`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/simulation/fidelity_simulator.py#L213-L252) | `fidelity_simulator.py` | Function | Monte Carlo shot sampling with empirical parity post-selection filtering. |
+| [`run_figure12_mitigated_comparison`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/simulation/fidelity_simulator.py#L254-L308) | `fidelity_simulator.py` | Function | Comprehensive comparative benchmark of Raw vs. Parity-Mitigated vs. ZNE across all 4 noise channels. |
+
+---
+
+## 10. Q-EDA Reversible Logic Compiler & Synthesis Engine
+
+| Symbol | File | Type | Description |
+|---|---|---|---|
+| [`ESOPCube`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/compiler/esop_synthesizer.py#L14-L44) | `esop_synthesizer.py` | Dataclass | Product term representation with literals, polarity, and target output rail. |
+| [`ESOPNetwork`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/compiler/esop_synthesizer.py#L47-L73) | `esop_synthesizer.py` | Dataclass | Multi-output ESOP network with evaluation and cube inspection methods. |
+| [`fast_reed_muller_transform`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/compiler/esop_synthesizer.py#L76-L92) | `esop_synthesizer.py` | Function | Computes Positive-Davio / Reed-Muller expansion coefficients in $O(n \cdot 2^n)$. |
+| [`optimize_esop_cubes`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/compiler/esop_synthesizer.py#L95-L151) | `esop_synthesizer.py` | Function | Algebraic ESOP reduction: duplicate cancellation ($c \oplus c = 0$) and variable merging ($Ax \oplus A\bar{x} = A$). |
+| [`truth_table_to_esop`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/compiler/esop_synthesizer.py#L154-L187) | `esop_synthesizer.py` | Function | Synthesizes an optimized ESOPNetwork from multi-output truth tables. |
+| [`parse_verilog_assign_to_esop`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/compiler/esop_synthesizer.py#L190-L235) | `esop_synthesizer.py` | Function | Ingests combinational Verilog `assign` statements into an optimized ESOPNetwork. |
+| [`add_clifford_t_toffoli`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/compiler/parity_mapper.py#L23-L49) | `parity_mapper.py` | Function | Fault-tolerant Clifford+T Toffoli decomposition (7 $T$ gates, 2 $H$, 6 CNOTs). |
+| [`build_parity_preserving_circuit`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/compiler/parity_mapper.py#L112-L188) | `parity_mapper.py` | Function | Maps ESOP cubes and scheduled batches to a strictly parity-preserving Clifford+T circuit. |
+| [`PebbleStrategy`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/compiler/pebble_scheduler.py#L35-L39) | `pebble_scheduler.py` | Enum | Scheduling strategies: `MIN_ANCILLA`, `MIN_T_DEPTH`, and `PARETO_BALANCED`. |
+| [`schedule_pebble_uncomputation`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/compiler/pebble_scheduler.py#L65-L121) | `pebble_scheduler.py` | Function | DAG pebble-game scheduling balancing ancilla count vs. parallel $T$-depth. |
+| [`compile_boolean_to_parity_clifford_t`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/compiler/pebble_scheduler.py#L124-L245) | `pebble_scheduler.py` | Function | End-to-end Q-EDA compiler entry point with 100% equivalence, zero garbage, and parity verification. |
+| [`CompiledCircuitArtifact`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/compiler/pebble_scheduler.py#L42-L62) | `pebble_scheduler.py` | Dataclass | Synthesized circuit artifact with metrics, pebble trace, and verification status. |
+
+---
+
+## 11. Native Quantum Decision Diagram (QMDD) & Multi-Bit Scaling Engine
+
+| Symbol | File | Type | Description |
+|---|---|---|---|
+| [`CyclotomicComplex`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/dd_engine/cyclotomic.py#L51-L188) | `cyclotomic.py` | Dataclass | Exact algebraic cyclotomic ring $\mathbb{D}[\omega] = \mathbb{Z}[\omega, 1/\sqrt{2}]$ arithmetic eliminating floating-point drift across Clifford+T gates. |
+| [`QMDDNode`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/dd_engine/qmdd.py#L19-L26) | `qmdd.py` | Dataclass | Decision diagram internal qubit branching node (level, low edge, high edge, id). |
+| [`QMDDEdge`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/dd_engine/qmdd.py#L29-L43) | `qmdd.py` | Dataclass | Directed edge carrying exact cyclotomic complex weight and pointing to target node. |
+| [`QMDDMatrixNode`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/dd_engine/qmdd.py#L46-L55) | `qmdd.py` | Dataclass | Operator decision diagram node with 4 quadrant matrix edges. |
+| [`QMDDMatrixEdge`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/dd_engine/qmdd.py#L58-L72) | `qmdd.py` | Dataclass | Directed operator edge carrying exact cyclotomic weight. |
+| [`QMDDContext`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/dd_engine/qmdd.py#L75-L157) | `qmdd.py` | Class | Global/local hash-consing Unique Table and memoized compute caches. |
+| [`QMDDState`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/dd_engine/qmdd.py#L160-L400) | `qmdd.py` | Class | Quantum Statevector Decision Diagram supporting native Clifford+T gate execution, exact expectation values, basis measurement, and statevector extraction. |
+| [`compute_golden_alu_result`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/dd_engine/multibit_alu.py#L24-L80) | `multibit_alu.py` | Function | Classical reference arithmetic and bitwise logic model for $N$-bit ALUs. |
+| [`get_operation_controls`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/dd_engine/multibit_alu.py#L83-L135) | `multibit_alu.py` | Function | Resolves Table VI control signals ($M, S_0, S_1, S_2, S_3$) with robust word matching. |
+| [`build_multibit_alu_circuit`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/dd_engine/multibit_alu.py#L138-L198) | `multibit_alu.py` | Function | Constructs parameterized $N$-bit Ripple-Carry Quantum ALU circuits (scaling up to 448 qubits). |
+| [`simulate_multibit_alu_qmdd`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/dd_engine/multibit_alu.py#L201-L255) | `multibit_alu.py` | Function | Simulates $N$-bit Quantum ALUs ($N \in \{1, 2, 4, 8, 16, 32, 64\}$) natively on the QMDD engine in milliseconds. |
+
+---
+
+## 12. Hardware Topology & SABRE Router Engine
+
+| Symbol | File | Type | Description |
+|---|---|---|---|
+| [`PhysicalQubitNode`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/router/topology_graph.py#L24-L34) | `topology_graph.py` | Dataclass | Physical transmon qubit with 3D coordinates $(x, y, z)$, $T_1$, $T_2$, and readout error. |
+| [`CouplingEdge`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/router/topology_graph.py#L36-L43) | `topology_graph.py` | Dataclass | Physical coupling bus between qubits with CX error and gate duration. |
+| [`TopologyGraph`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/router/topology_graph.py#L46-L152) | `topology_graph.py` | Class | Coupling topology representation with all-pairs BFS hop distances $D[u, v]$ and Dijkstra log-infidelity noise distances $W[u, v]$. |
+| [`build_all_to_all_topology`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/router/topology_graph.py#L154-L176) | `topology_graph.py` | Function | Constructs ideal all-to-all lattice ($K_n$) baseline. |
+| [`build_grid_topology`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/router/topology_graph.py#L179-L215) | `topology_graph.py` | Function | Constructs 2D square lattice nearest-neighbor planar grid. |
+| [`build_heavy_hex_topology`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/router/topology_graph.py#L217-L345) | `topology_graph.py` | Function | Constructs authentic IBM Heavy-Hexagonal lattices (Falcon 27Q, Eagle 127Q, Heron 133Q). |
+| [`NoiseAwarePlacement`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/router/sabre_router.py#L65-L195) | `sabre_router.py` | Class | Analyzes two-qubit interaction graph and maps high-traffic logical qubits to minimum-infidelity physical subgraphs. |
+| [`ParitySafeSabreRouter`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/router/sabre_router.py#L198-L476) | `sabre_router.py` | Class | Bidirectional SABRE router enforcing strict 3-CNOT parity-preserving SWAP decomposition ($P_{\text{in}} = P_{\text{out}}$). |
+| [`RoutedCircuitArtifact`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/router/sabre_router.py#L33-L62) | `sabre_router.py` | Dataclass | Hardware routing artifact with routed circuit, layout maps, latency, estimated fidelity, and SWAP congestion heatmap. |
+| [`route_circuit_to_topology`](file:///home/mani/WorkSpace/VLSI/QC/backend/app/router/sabre_router.py#L479-L487) | `sabre_router.py` | Function | High-level convenience compiler entry point to route quantum circuits onto physical topologies. |
+| [`HeavyHexPanel`](file:///home/mani/WorkSpace/VLSI/QC/frontend/src/components/HeavyHexPanel.tsx#L23-L445) | `HeavyHexPanel.tsx` | React.FC | Interactive Three.js 3D WebGL physical transmon QPU visualizer with OrbitControls, pulsating node indicators, and SWAP congestion heatmap. |
+

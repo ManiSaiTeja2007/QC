@@ -39,6 +39,8 @@ from backend.app.core.canonical_ir import build_canonical_circuit_ir
 from backend.app.core.cost_metrics import analyze_circuit_cost
 from backend.app.api.circuits import router as circuits_router
 from backend.app.api.verilog_verify import router as verilog_router
+from backend.app.api.alu import router as alu_router
+from backend.app.api.qeda import router as qeda_router
 from backend.app.core.circuit_cache import hot_boot_caches
 
 
@@ -68,6 +70,8 @@ app.add_middleware(
 # Mount Circuit Storage & Library API Router
 app.include_router(circuits_router, prefix="/api/circuits", tags=["circuits"])
 app.include_router(verilog_router, prefix="/api/verilog", tags=["verilog"])
+app.include_router(alu_router, prefix="/api/alu", tags=["alu"])
+app.include_router(qeda_router, prefix="/api/qeda", tags=["qeda"])
 
 # Also initialize immediately on module import for tests and scripts
 hot_boot_caches()

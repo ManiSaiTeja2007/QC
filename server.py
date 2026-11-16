@@ -25,17 +25,17 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from qiskit import QuantumCircuit
-from src.gates.basic_gates import build_fredkin_circuit
-from src.modules.falfg import build_falfg_clifford_t, build_falfg_ncv
-from src.modules.one_bit_alu import (
+from backend.app.gates.basic_gates import build_fredkin_circuit
+from backend.app.modules.falfg import build_falfg_clifford_t, build_falfg_ncv
+from backend.app.modules.one_bit_alu import (
     build_one_bit_alu_clifford_t,
     build_one_bit_alu_ncv,
     ALU_LOGIC_OPERATIONS,
     ALU_ARITHMETIC_OPERATIONS,
 )
-from src.modules.uncomputation import build_uncomputed_adder_subtractor
-from src.simulation.canonical_ir import build_canonical_circuit_ir
-from src.simulation.cost_metrics import analyze_circuit_cost
+from backend.app.modules.uncomputation import build_uncomputed_adder_subtractor
+from backend.app.simulation.canonical_ir import build_canonical_circuit_ir
+from backend.app.simulation.cost_metrics import analyze_circuit_cost
 
 
 app = FastAPI(title="Quantum ALU 3D Workbench API", version="3.0.0")

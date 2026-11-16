@@ -80,7 +80,11 @@ export const ErrorHeatmap: React.FC<ErrorHeatmapProps> = ({ heatmap, errorRate }
               x={labelWidth + c * cellWidth + cellWidth / 2}
               y={headerHeight - 8}
               textAnchor="middle"
-              className="fill-slate-300 text-[11px] font-bold"
+              fill="#ffffff"
+              style={{ fill: '#ffffff', color: '#ffffff' }}
+              fontSize="11"
+              fontWeight="bold"
+              className="select-none font-mono"
             >
               {bitName}
             </text>
@@ -98,7 +102,11 @@ export const ErrorHeatmap: React.FC<ErrorHeatmapProps> = ({ heatmap, errorRate }
                   x={labelWidth - 10}
                   y={y + cellHeight / 2 + 3}
                   textAnchor="end"
-                  className="fill-slate-400 text-[10px]"
+                  fill="#ffffff"
+                  style={{ fill: '#ffffff', color: '#ffffff' }}
+                  fontSize="11"
+                  fontWeight="500"
+                  className="select-none font-mono"
                 >
                   {stateLabel}
                 </text>

@@ -78,7 +78,11 @@ export const FidelityDistributionBoxPlot: React.FC<FidelityDistributionBoxPlotPr
                   x={tx}
                   y={boxY + boxHeight + 34}
                   textAnchor="middle"
-                  className="fill-slate-500 text-[10px]"
+                  fill="#ffffff"
+                  style={{ fill: '#ffffff', color: '#ffffff' }}
+                  fontSize="11"
+                  fontWeight="600"
+                  className="select-none font-mono"
                 >
                   {tick.toFixed(2)}
                 </text>
@@ -150,31 +154,62 @@ export const FidelityDistributionBoxPlot: React.FC<FidelityDistributionBoxPlotPr
             strokeLinecap="round"
           />
 
-          {/* Value Labels Above */}
-          <text
-            x={xMin}
-            y={boxY - 14}
-            textAnchor="middle"
-            className="fill-rose-400 text-[10px] font-bold"
-          >
-            Min: {min.toFixed(3)}
-          </text>
-          <text
-            x={xMedian}
-            y={boxY - 14}
-            textAnchor="middle"
-            className="fill-sky-400 text-[10px] font-bold"
-          >
-            Med: {median.toFixed(3)}
-          </text>
-          <text
-            x={xMax}
-            y={boxY - 14}
-            textAnchor="middle"
-            className="fill-emerald-400 text-[10px] font-bold"
-          >
-            Max: {max.toFixed(3)}
-          </text>
+          {/* Value Labels Above (De-duplicated & Staggered to Prevent Text Collisions) */}
+          {Math.abs(max - min) < 0.001 ? (
+            <text
+              x={xMedian}
+              y={boxY - 14}
+              textAnchor="end"
+              fill="#ffffff"
+              style={{ fill: '#ffffff', color: '#ffffff' }}
+              fontSize="12"
+              fontWeight="bold"
+              className="select-none font-mono"
+            >
+              Fidelity: {median.toFixed(3)} (Uniform 100% Match)
+            </text>
+          ) : (
+            <>
+              <text
+                x={xMin}
+                y={boxY - 14}
+                textAnchor="start"
+                fill="#ffffff"
+                style={{ fill: '#ffffff', color: '#ffffff' }}
+                fontSize="11"
+                fontWeight="bold"
+                className="select-none font-mono"
+              >
+                Min: {min.toFixed(3)}
+              </text>
+              {Math.abs(xMedian - xMin) > 50 && Math.abs(xMax - xMedian) > 50 && (
+                <text
+                  x={xMedian}
+                  y={boxY - 14}
+                  textAnchor="middle"
+                  fill="#ffffff"
+                  style={{ fill: '#ffffff', color: '#ffffff' }}
+                  fontSize="11"
+                  fontWeight="bold"
+                  className="select-none font-mono"
+                >
+                  Med: {median.toFixed(3)}
+                </text>
+              )}
+              <text
+                x={xMax}
+                y={boxY - 14}
+                textAnchor="end"
+                fill="#ffffff"
+                style={{ fill: '#ffffff', color: '#ffffff' }}
+                fontSize="11"
+                fontWeight="bold"
+                className="select-none font-mono"
+              >
+                Max: {max.toFixed(3)}
+              </text>
+            </>
+          )}
         </svg>
 
         {/* Statistical Summary Pills */}
