@@ -41,16 +41,16 @@ export const StatePanel: React.FC<StatePanelProps> = ({
   measurementBasis,
   onBasisChange,
 }) => {
-  const diracKet = stepData?.psi_ket || '|0000000⟩';
+  const blochVecs = stepData?.bloch_vectors || [];
+  const diracKet = stepData?.psi_ket || ('|' + '0'.repeat(blochVecs.length || 7) + '⟩');
   const gateObj = stepData?.gate;
   const gateKey = gateObj ? gateObj.name.toUpperCase() : 'INIT';
   const gateInfo = GATE_INFO[gateKey] || { short: `${gateKey} gate applied`, color: '#94a3b8' };
-  const blochVecs = stepData?.bloch_vectors || [];
 
   const renderMeasurementBars = () => {
     if (!stepData) return null;
     if (measurementBasis === 'Z') {
-      return blochVecs.slice(0, 7).map((bv, q) => {
+      return blochVecs.map((bv, q) => {
         const p1 = (1 - bv.z) / 2;
         const p0 = 1 - p1;
         const color = QUBIT_COLORS[q % QUBIT_COLORS.length];
@@ -194,7 +194,7 @@ export const StatePanel: React.FC<StatePanelProps> = ({
           flexShrink: 0,
           background: '#060a12',
         }}>
-          {blochVecs.slice(0, 7).map((bv, q) => {
+          {blochVecs.map((bv, q) => {
             const { ket, color } = blochToKet(bv);
             const isSelected = q === selectedQubit;
             return (

@@ -120,9 +120,9 @@ export const BuilderWorkspace: React.FC<BuilderWorkspaceProps> = ({
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [speedMs, setSpeedMs] = useState<number>(200);
 
-  // Phase 124–128: Active Qubits Layer & Display Modes
-  const [displayMode, setDisplayMode] = useState<'active' | 'selected' | 'all' | 'custom'>('active');
-  const [customDisplayedQubits, setCustomDisplayedQubits] = useState<number[]>([]);
+  // Phase 124–128: Active Qubits Layer & Display Modes — defaults to 'all' in builder
+  const [displayMode, setDisplayMode] = useState<'active' | 'selected' | 'all' | 'custom'>('all');
+  const [customDisplayedQubits, setCustomDisplayedQubits] = useState<number[]>([0, 1]);
 
   // Calculate active qubits from placed gates and non-ground inputs
   const activeQubits = useMemo(() => {
@@ -243,6 +243,7 @@ export const BuilderWorkspace: React.FC<BuilderWorkspaceProps> = ({
       const nextQ = numQubits + 1;
       setNumQubits(nextQ);
       setInputBits((prev) => [...prev, 0]);
+      setCustomDisplayedQubits((prev) => [...prev, nextQ - 1]);
       const inCount = Math.max(1, Math.ceil(nextQ / 2));
       const outCount = Math.max(1, nextQ - inCount);
       onIOContractChange?.(makeDefaultIOContract(inCount, outCount, 'builder'));
@@ -318,7 +319,7 @@ export const BuilderWorkspace: React.FC<BuilderWorkspaceProps> = ({
           </button>
         </div>
         {!paletteCollapsed && (
-          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+          <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
             <GatePalette selectedGate={selectedGate} onSelectGate={setSelectedGate} />
           </div>
         )}

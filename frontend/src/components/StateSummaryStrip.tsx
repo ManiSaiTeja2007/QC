@@ -83,8 +83,7 @@ export const StateSummaryStrip: React.FC<StateSummaryStripProps> = ({
       {viewMode !== 'focus' && qubitsToRender.length > 1 && (
         <div className="all-qubits-summary-strip">
           {qubitsToRender.map((i) => {
-            const vec = stepData.bloch_vectors[i];
-            if (!vec) return null;
+            const vec = stepData?.bloch_vectors?.[i] || { x: 0, y: 0, z: 1 };
             const isSel = i === selectedQubit;
             const isActive = activeQubits ? activeQubits.includes(i) : activeGateQubits.includes(i);
             const name = qubitNames[i] ? qubitNames[i].split(' ')[0] : `Q${i}`;

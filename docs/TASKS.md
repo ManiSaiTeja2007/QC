@@ -56,3 +56,20 @@
     - Compacted HeavyHex panel header into an inline control row with pill tab segmented control (`⬡ QPU Router` / `🌐 Q{n} Bloch`)
     - Complete elimination of light mode across the application (permanently locked dark mode)
 
+## Feature: [FIX-261121] Wire-Egress Alignment, Builder Gate Palette & Dynamic Qubit Addition
+
+* **Status:** DONE
+* **Date Completed:** 2026-11-21
+* **Evidence:**
+  - Multi-Agent Diagnosis: `research` subagent diagnosed double startY offset (+32px), flex-chain collapse in gate palette, and displayMode active filter on newly added builder qubits.
+  - Fix Execution:
+    - Removed redundant `${startY}px` DOM container in `CircuitPanel.tsx`; rendered `LIVE STATE (3D)` header at $y=22$ inside `WireEgressBlochRail` SVG for 1:1 pixel coordinate parity.
+    - Added `height: 100%`, flex column structure, and `minHeight: 150px` badge grid floor to `GatePalette.tsx` & `index.css`.
+    - Switched default `displayMode` to `'all'` in `BuilderWorkspace.tsx`, removed `slice(0, 7)` cap in `StatePanel.tsx`, and provided immediate fallback vector in `StateSummaryStrip.tsx`.
+  - Frontend Build: `bun run build` passed cleanly in 1.63s with 0 errors.
+  - Backend Static Type Check: `pyrefly check .` passed with 0 errors.
+  - Regression Test Suite: `pytest -k "not e2e" tests/` passed 162/162 in 52.08s.
+  - Visual Verification: Chrome screenshots (`docs/images/05_live_simulation_alu.png` and `docs/images/01_circuit_builder.png`) confirm pixel-perfect wire-to-sphere alignment and full 27-gate palette visibility with dynamic 3-qubit addition.
+  - Multi-Agent Adversarial Review: `self` adversarial reviewer completed full evaluation: 4/4 PASS across all quality dimensions and anti-gaming invariants.
+
+

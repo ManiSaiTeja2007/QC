@@ -614,22 +614,6 @@ export const CircuitPanel: React.FC<CircuitPanelProps> = ({
 
         {/* Stationary / Pinned Wire-Aligned Egress Bloch Spheres Rail (Right) */}
         <div className="circuit-pinned-right" ref={pinnedRightRef}>
-          <div style={{
-            height: `${startY}px`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderBottom: '1px solid rgba(51, 65, 85, 0.4)',
-            fontSize: '9px',
-            fontWeight: 700,
-            color: '#38bdf8',
-            letterSpacing: '0.04em',
-            textTransform: 'uppercase',
-            fontFamily: 'var(--font-mono)',
-            userSelect: 'none',
-          }}>
-            LIVE STATE (3D)
-          </div>
           <WireEgressBlochRail
             numQubits={numQubits}
             selectedQubit={selectedQubit}

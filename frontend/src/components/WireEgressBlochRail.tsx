@@ -260,7 +260,7 @@ export const WireEgressBlochRail: React.FC<WireEgressBlochRailProps> = ({
         userSelect: 'none',
       }}
     >
-      {/* SVG Connecting Wire Stubs */}
+      {/* SVG Connecting Wire Stubs & Live State Header */}
       <svg
         style={{
           position: 'absolute',
@@ -271,6 +271,29 @@ export const WireEgressBlochRail: React.FC<WireEgressBlochRailProps> = ({
           pointerEvents: 'none',
         }}
       >
+        {/* Rail Top Header: Aligns with step numbers / WIRE PIN IN at y=22 */}
+        <text
+          x={width / 2}
+          y={22}
+          textAnchor="middle"
+          fontSize="9px"
+          fontWeight="700"
+          fill="#38bdf8"
+          letterSpacing="0.04em"
+          fontFamily="var(--font-mono)"
+          style={{ textTransform: 'uppercase', userSelect: 'none' }}
+        >
+          LIVE STATE (3D)
+        </text>
+        <line
+          x1={0}
+          y1={startY}
+          x2={width}
+          y2={startY}
+          stroke="rgba(51, 65, 85, 0.4)"
+          strokeWidth={1}
+        />
+
         {Array.from({ length: numQubits }).map((_, q) => {
           const wireY = startY + q * rowHeight + rowHeight / 2;
           const isSel = q === selectedQubit;

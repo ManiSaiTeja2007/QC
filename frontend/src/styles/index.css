@@ -866,6 +866,7 @@ select:hover {
   gap: 8px;
   flex: 1;
   min-height: 0;
+  height: 100%;
   overflow: hidden;
 }
 
@@ -929,7 +930,9 @@ select:hover {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-
+  max-height: 290px;
+  min-height: 140px;
+  flex-shrink: 0;
 }
 
 .canvas-toolbar {
@@ -1469,12 +1472,11 @@ select:hover {
   border-radius: 8px;
   padding: 10px 12px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-  /* Fixed height so it never shifts the layout when gate changes */
-  height: 268px;
-  min-height: 268px;
+  /* Responsive height so it does not collapse the gate badges */
   max-height: 268px;
-  flex-shrink: 0;
-  overflow: hidden;
+  min-height: 180px;
+  flex-shrink: 1;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
 }

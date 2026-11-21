@@ -124,14 +124,14 @@ export const GatePalette: React.FC<GatePaletteProps> = ({
         ))}
       </div>
 
-      {/* ── Gate Badge Grid (only this section scrolls, fills remaining space) */}
+      {/* ── Gate Badge Grid (prominently visible, scrolls within available space) */}
       <div
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
           gap: 6,
-          flex: '1 1 0',
-          minHeight: 0,
+          flex: '1 1 180px',
+          minHeight: 150,
           overflowY: 'auto',
           overflowX: 'hidden',
           paddingRight: 2,
