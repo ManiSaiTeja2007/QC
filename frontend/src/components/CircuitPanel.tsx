@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { SimulationPayload } from '../types/simulation';
+import { WireEgressBlochRail } from './WireEgressBlochRail';
 import {
   BookOpen,
   Zap,
@@ -32,8 +33,8 @@ interface CircuitPanelProps {
 }
 
 const STORAGE_KEY = 'quantum_studio_circuit_viewport_height';
-const DEFAULT_HEIGHT = 240;
-const MIN_HEIGHT = 120;
+const DEFAULT_HEIGHT = 295;
+const MIN_HEIGHT = 140;
 const MAX_HEIGHT = 650;
 
 export const CircuitPanel: React.FC<CircuitPanelProps> = ({
@@ -48,6 +49,7 @@ export const CircuitPanel: React.FC<CircuitPanelProps> = ({
 }) => {
   const viewportRef = useRef<HTMLDivElement>(null);
   const pinnedLeftRef = useRef<HTMLDivElement>(null);
+  const pinnedRightRef = useRef<HTMLDivElement>(null);
   const leftSvgRef = useRef<SVGSVGElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const [activeDescTab, setActiveDescTab] = useState<'overview' | 'step' | 'pinout' | 'theory'>('overview');
@@ -56,6 +58,9 @@ export const CircuitPanel: React.FC<CircuitPanelProps> = ({
     if (pinnedLeftRef.current) {
       pinnedLeftRef.current.scrollTop = e.currentTarget.scrollTop;
     }
+    if (pinnedRightRef.current) {
+      pinnedRightRef.current.scrollTop = e.currentTarget.scrollTop;
+    }
   };
 
   const [circuitHeight, setCircuitHeight] = useState<number>(() => {
@@ -63,7 +68,7 @@ export const CircuitPanel: React.FC<CircuitPanelProps> = ({
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const val = parseInt(saved, 10);
-        if (!isNaN(val) && val >= MIN_HEIGHT && val <= MAX_HEIGHT) {
+        if (!isNaN(val) && val >= 290 && val <= MAX_HEIGHT) {
           return val;
         }
       }
@@ -281,8 +286,9 @@ export const CircuitPanel: React.FC<CircuitPanelProps> = ({
   const gates = simulationData.primitive_gates;
   const logicalOps = simulationData.logical_operations || [];
   const totalSteps = simulationData.total_primitive_steps;
+  const stepData = simulationData.steps?.[currentStep] || simulationData.steps?.[0];
 
-  const rowHeight = 28;
+  const rowHeight = numQubits <= 8 ? 32 : 28;
   const colWidth = 36;
   const startX = 20;
   const startY = 32;
@@ -604,6 +610,38 @@ export const CircuitPanel: React.FC<CircuitPanelProps> = ({
               );
             })}
           </svg>
+        </div>
+
+        {/* Stationary / Pinned Wire-Aligned Egress Bloch Spheres Rail (Right) */}
+        <div className="circuit-pinned-right" ref={pinnedRightRef}>
+          <div style={{
+            height: `${startY}px`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderBottom: '1px solid rgba(51, 65, 85, 0.4)',
+            fontSize: '9px',
+            fontWeight: 700,
+            color: '#38bdf8',
+            letterSpacing: '0.04em',
+            textTransform: 'uppercase',
+            fontFamily: 'var(--font-mono)',
+            userSelect: 'none',
+          }}>
+            LIVE STATE (3D)
+          </div>
+          <WireEgressBlochRail
+            numQubits={numQubits}
+            selectedQubit={selectedQubit}
+            onSelectQubit={onSelectQubit}
+            stepData={stepData}
+            qubitNames={simulationData.qubit_names}
+            outputBits={simulationData.output_bits}
+            rowHeight={rowHeight}
+            startY={startY}
+            height={svgHeight}
+            width={110}
+          />
         </div>
       </div>
 

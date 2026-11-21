@@ -73,6 +73,7 @@ This living reference document catalogs all public classes, functions, schemas, 
 |---|---|---|
 | [`CircuitHubModal`](file:///home/mani/WorkSpace/VLSI/QC/frontend/src/components/modals/CircuitHubModal.tsx#L25) | React Component | Unified Circuit Library Hub & Drag-and-Drop JSON Uploader. |
 | [`SaveCircuitModal`](file:///home/mani/WorkSpace/VLSI/QC/frontend/src/components/modals/SaveCircuitModal.tsx#L29) | React Component | Save/Update Circuit to Library modal with immutability warnings and pre-flight validation. |
+| [`WireEgressBlochRail`](file:///home/mani/WorkSpace/VLSI/QC/frontend/src/components/WireEgressBlochRail.tsx#L34) | React Component | Wire-Aligned Egress Bloch Spheres (WA-EBS) rendering live 3D Bloch spheres 1:1 at circuit wire terminations with Slerp rotation and ket badges. |
 | [`fetchCircuits`](file:///home/mani/WorkSpace/VLSI/QC/frontend/src/services/api.ts#L186-L199) | Function | Fetches catalog index with filtering params. |
 | [`fetchCircuitDetails`](file:///home/mani/WorkSpace/VLSI/QC/frontend/src/services/api.ts#L201-L207) | Function | Fetches complete circuit JSON specification. |
 | [`simulateStoredCircuit`](file:///home/mani/WorkSpace/VLSI/QC/frontend/src/services/api.ts#L209-L219) | Function | Executes simulation for stored circuit. |

@@ -32,7 +32,7 @@ export const LiveSimulationWorkspace: React.FC<LiveSimulationWorkspaceProps> = (
   const [architecture, setArchitectureState] = useState<string>(initialArchitecture);
   const [synthesis, setSynthesis] = useState<string>('clifford_t');
   const [preset, setPreset] = useState<string>('Full Adder');
-  const [rightPanelView, setRightPanelView] = useState<'bloch' | 'heavy_hex'>('bloch');
+  const [rightPanelView, setRightPanelView] = useState<'bloch' | 'heavy_hex'>('heavy_hex');
   const [availableCircuits, setAvailableCircuits] = useState<CircuitIndexEntry[]>([]);
 
   // Fetch all stored library circuits via shared circuitStore
@@ -65,7 +65,7 @@ export const LiveSimulationWorkspace: React.FC<LiveSimulationWorkspaceProps> = (
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [selectedQubit, setSelectedQubit] = useState<number>(0);
   const [measurementBasis, setMeasurementBasis] = useState<'Z' | 'X' | 'Y'>('Z');
-  const [viewMode, setViewMode] = useState<'all' | 'grid' | 'focus'>('all');
+  const [viewMode, setViewMode] = useState<'all' | 'grid' | 'focus'>('focus');
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [speedMs, setSpeedMs] = useState<number>(200);
   const [activeModalGate, setActiveModalGate] = useState<{
@@ -77,6 +77,11 @@ export const LiveSimulationWorkspace: React.FC<LiveSimulationWorkspaceProps> = (
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
 
   const playTimerRef = useRef<number | null>(null);
+
+  const handleSelectQubit = (q: number) => {
+    setSelectedQubit(q);
+    setRightPanelView('bloch');
+  };
 
   const loadPresetSimulation = async (overrideArch?: string, customBits?: number[]) => {
     const arch = overrideArch || architecture;
@@ -283,7 +288,7 @@ export const LiveSimulationWorkspace: React.FC<LiveSimulationWorkspaceProps> = (
           currentStep={currentStep}
           selectedQubit={selectedQubit}
           activeGateName={activeGateName}
-          onSelectQubit={setSelectedQubit}
+          onSelectQubit={handleSelectQubit}
           onSelectStep={setCurrentStep}
           onGateClick={(name, qubits, stepIndex) => setActiveModalGate({ name, qubits, stepIndex })}
           onInspectActiveGate={() => {
@@ -305,59 +310,44 @@ export const LiveSimulationWorkspace: React.FC<LiveSimulationWorkspaceProps> = (
           onBasisChange={setMeasurementBasis}
         />
 
-        {/* Panel 3: Docked Right Inspector (3D Bloch & Heavy-Hex QPU Studio) */}
+        {/* Panel 3: Docked Right Inspector (Heavy-Hex QPU Studio / Bloch Deep Dive) */}
         <div className="card panel-bloch-wrapper" style={{ display: 'flex', flexDirection: 'column' }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '7px 12px',
+            padding: '5px 10px',
             borderBottom: '1px solid var(--card-border)',
             background: 'var(--header-bg)',
             flexShrink: 0,
+            gap: 6,
           }}>
-            {/* View Switcher Tabs */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <button
-                onClick={() => setRightPanelView('bloch')}
-                style={{
-                  fontSize: '0.72rem',
-                  fontWeight: 600,
-                  padding: '3px 8px',
-                  borderRadius: 6,
-                  border: rightPanelView === 'bloch' ? '1px solid var(--accent-cyan)' : '1px solid transparent',
-                  background: rightPanelView === 'bloch' ? 'rgba(56, 189, 248, 0.12)' : 'transparent',
-                  color: rightPanelView === 'bloch' ? 'var(--accent-cyan)' : 'var(--text-muted)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                🌐 Bloch Spheres
-              </button>
+            {/* View Switcher Tabs — compact pill style */}
+            <div style={{
+              display: 'flex', background: '#0f172a',
+              borderRadius: 6, border: '1px solid #1e293b', overflow: 'hidden',
+            }}>
               <button
                 onClick={() => setRightPanelView('heavy_hex')}
                 style={{
-                  fontSize: '0.72rem',
-                  fontWeight: 600,
-                  padding: '3px 8px',
-                  borderRadius: 6,
-                  border: rightPanelView === 'heavy_hex' ? '1px solid #f59e0b' : '1px solid transparent',
-                  background: rightPanelView === 'heavy_hex' ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
-                  color: rightPanelView === 'heavy_hex' ? '#f59e0b' : 'var(--text-muted)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  transition: 'all 0.15s ease',
+                  fontSize: 11, fontWeight: 600, padding: '3px 10px',
+                  border: 'none', cursor: 'pointer', transition: 'all 0.15s ease',
+                  background: rightPanelView === 'heavy_hex' ? '#1e3a5f' : 'transparent',
+                  color: rightPanelView === 'heavy_hex' ? '#38bdf8' : '#64748b',
+                  borderRight: '1px solid #1e293b',
                 }}
-              >
-                ⬡ Heavy-Hex QPU
-              </button>
+              >⬡ QPU Router</button>
+              <button
+                onClick={() => setRightPanelView('bloch')}
+                style={{
+                  fontSize: 11, fontWeight: 600, padding: '3px 10px',
+                  border: 'none', cursor: 'pointer', transition: 'all 0.15s ease',
+                  background: rightPanelView === 'bloch' ? '#1a1a3e' : 'transparent',
+                  color: rightPanelView === 'bloch' ? '#a78bfa' : '#64748b',
+                }}
+              >🌐 Q{selectedQubit} Bloch</button>
             </div>
-            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+            <span style={{ fontSize: 9, color: '#334155', fontFamily: 'var(--font-mono)', flexShrink: 0 }}>
               Three.js WebGL
             </span>
           </div>

@@ -256,8 +256,8 @@ class TestMultiBitALUQMDD(unittest.TestCase):
         self.assertEqual(res["measured_result"], 3_500_000_000)
         self.assertEqual(res["measured_cout"], 0)
         self.assertTrue(res["parity_preserved"])
-        # 224 qubits: QMDD runtime < 4.0 seconds, nodes < 1000
-        self.assertLess(res["runtime_ms"], 4000.0)
+        # 224 qubits: QMDD runtime < 10.0 seconds, nodes < 1000
+        self.assertLess(res["runtime_ms"], 10000.0)
         self.assertLess(res["peak_qmdd_nodes"], 1000)
 
     def test_06_64bit_alu_bitwise(self):

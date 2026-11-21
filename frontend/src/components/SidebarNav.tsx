@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { StudioMode } from '../types/mode';
 import { CircuitIndexEntry } from '../types/circuit';
 import { circuitStore } from '../services/circuitStore';
-import { useTheme } from '../context/ThemeContext';
 
 interface SidebarNavProps {
   appMode: StudioMode;
@@ -45,7 +44,6 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
   onOpenCircuitHub,
   refreshTrigger,
 }) => {
-  const { theme, toggleTheme } = useTheme();
   const [storedCircuits, setStoredCircuits] = useState<CircuitIndexEntry[]>([]);
 
   useEffect(() => {
@@ -223,14 +221,6 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
           active={false}
           collapsed={collapsed}
           onClick={() => onOpenDocs?.()}
-        />
-        <SideItem
-          icon={theme === 'dark' ? '☀️' : '🌙'}
-          label={theme === 'dark' ? 'Light Theme' : 'Dark Theme'}
-          badge=""
-          active={false}
-          collapsed={collapsed}
-          onClick={toggleTheme}
         />
       </div>
 

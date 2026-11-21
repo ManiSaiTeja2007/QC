@@ -330,36 +330,17 @@ export const HeavyHexPanel: React.FC<HeavyHexPanelProps> = ({
   const telemetry = routingResult?.routing;
 
   return (
-    <div className="relative w-full h-[580px] bg-slate-950 border border-slate-800 rounded-xl overflow-hidden flex flex-col font-sans select-none">
-      {/* Top Header & Q-EDA Controls Bar */}
-      <div className="z-10 flex flex-wrap items-center justify-between gap-3 px-5 py-3 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-bold text-sm">
-            ⬡
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold text-slate-100 tracking-wide">
-                Hardware Topology & SABRE Router
-              </h3>
-              <span className="px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
-                Pillar D Q-EDA
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-400">
-              Noise-tuned initial placement & 3-CNOT parity-safe SWAP routing
-            </p>
-          </div>
-        </div>
-
-        {/* Controls */}
-        <div className="flex items-center gap-3">
+    <div className="heavy-hex-container">
+      {/* Top Header & Q-EDA Controls Bar — compact, clean */}
+      <div className="heavy-hex-header" style={{ padding: '6px 10px', gap: 6 }}>
+        {/* Controls row: topology + toggles + route button, all in one tight line */}
+        <div className="heavy-hex-controls" style={{ width: '100%', flexWrap: 'wrap' }}>
           {/* Topology Selector */}
           <select
             value={selectedTopologyId}
             onChange={(e) => setSelectedTopologyId(e.target.value)}
             disabled={loading}
-            className="px-3 py-1.5 text-xs bg-slate-800 border border-slate-700 text-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-colors"
+            className="heavy-hex-select"
           >
             {topologies.map((t) => (
               <option key={t.id} value={t.id}>
@@ -372,14 +353,10 @@ export const HeavyHexPanel: React.FC<HeavyHexPanelProps> = ({
           <button
             onClick={() => setNoiseAware(!noiseAware)}
             disabled={loading}
-            className={`px-3 py-1.5 text-xs rounded-lg font-medium border transition-colors flex items-center gap-1.5 ${
-              noiseAware
-                ? 'bg-amber-500/15 border-amber-500/40 text-amber-300'
-                : 'bg-slate-800/80 border-slate-700 text-slate-400'
-            }`}
+            className={`heavy-hex-toggle ${noiseAware ? 'active-noise' : ''}`}
             title="Maps high-traffic logical qubits to minimum-infidelity physical subgraphs"
           >
-            <span className={`w-2 h-2 rounded-full ${noiseAware ? 'bg-amber-400 animate-pulse' : 'bg-slate-600'}`} />
+            <span className={`heavy-hex-dot ${noiseAware ? 'amber' : 'idle'}`} />
             Noise-Aware
           </button>
 
@@ -387,25 +364,28 @@ export const HeavyHexPanel: React.FC<HeavyHexPanelProps> = ({
           <button
             onClick={() => setBidirectional(!bidirectional)}
             disabled={loading}
-            className={`px-3 py-1.5 text-xs rounded-lg font-medium border transition-colors flex items-center gap-1.5 ${
-              bidirectional
-                ? 'bg-cyan-500/15 border-cyan-500/40 text-cyan-300'
-                : 'bg-slate-800/80 border-slate-700 text-slate-400'
-            }`}
+            className={`heavy-hex-toggle ${bidirectional ? 'active-bidi' : ''}`}
             title="Runs forward-backward-forward SABRE passes to eliminate SWAP congestion"
           >
-            <span className={`w-2 h-2 rounded-full ${bidirectional ? 'bg-cyan-400' : 'bg-slate-600'}`} />
-            Bidirectional
+            <span className={`heavy-hex-dot ${bidirectional ? 'cyan' : 'idle'}`} />
+            Bidir
           </button>
 
           {/* Refresh / Re-route */}
           <button
             onClick={handleRoute}
             disabled={loading}
-            className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white transition-colors flex items-center gap-1.5 shadow-sm shadow-cyan-900/50"
+            className="heavy-hex-route-btn"
           >
             {loading ? (
-              <span className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              <span style={{
+                display: 'inline-block',
+                width: 12, height: 12,
+                border: '2px solid rgba(255,255,255,0.3)',
+                borderTopColor: '#ffffff',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite'
+              }} />
             ) : (
               '⚡ Route'
             )}
@@ -417,60 +397,60 @@ export const HeavyHexPanel: React.FC<HeavyHexPanelProps> = ({
       <div
         ref={mountRef}
         onClick={handleCanvasClick}
-        className="w-full flex-1 cursor-grab active:cursor-grabbing relative"
+        className="heavy-hex-canvas-wrap"
       >
         {/* Floating Metrics HUD Card */}
         {telemetry && (
-          <div className="absolute top-4 left-4 z-20 p-3.5 rounded-xl bg-slate-900/85 backdrop-blur-md border border-slate-700/60 shadow-xl text-xs space-y-2.5 max-w-[270px]">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-              <span className="font-semibold text-slate-200">{telemetry.topology}</span>
-              <span className="px-1.5 py-0.5 text-[10px] font-mono rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+          <div className="heavy-hex-hud">
+            <div className="heavy-hex-hud-top">
+              <span className="heavy-hex-hud-title">{telemetry.topology}</span>
+              <span className="heavy-hex-parity-badge">
                 Parity: Preserved
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-slate-300 font-mono text-[11px]">
+            <div className="heavy-hex-hud-grid">
               <div>
-                <span className="text-slate-500 block text-[10px]">SWAPs Added</span>
-                <span className="text-amber-400 font-bold text-sm">
+                <span className="heavy-hex-hud-lbl">SWAPs Added</span>
+                <span className="heavy-hex-hud-val-amber">
                   {telemetry.num_swaps}
                 </span>
-                <span className="text-[10px] text-slate-500 ml-1">
+                <span style={{ fontSize: 10, color: '#64748b', marginLeft: 4 }}>
                   (+{telemetry.added_cx_count} CX)
                 </span>
               </div>
               <div>
-                <span className="text-slate-500 block text-[10px]">Circuit Depth</span>
-                <span className="text-slate-200 font-bold text-sm">
+                <span className="heavy-hex-hud-lbl">Circuit Depth</span>
+                <span className="heavy-hex-hud-val">
                   {telemetry.depth}
                 </span>
               </div>
               <div>
-                <span className="text-slate-500 block text-[10px]">Hardware Latency</span>
-                <span className="text-cyan-400 font-semibold">
+                <span className="heavy-hex-hud-lbl">Hardware Latency</span>
+                <span className="heavy-hex-hud-val-cyan">
                   {telemetry.duration_ns >= 1000
                     ? `${(telemetry.duration_ns / 1000).toFixed(2)} µs`
                     : `${telemetry.duration_ns} ns`}
                 </span>
               </div>
               <div>
-                <span className="text-slate-500 block text-[10px]">Est. Fidelity</span>
-                <span className="text-emerald-400 font-semibold">
+                <span className="heavy-hex-hud-lbl">Est. Fidelity</span>
+                <span className="heavy-hex-hud-val-emerald">
                   {(telemetry.estimated_fidelity * 100).toFixed(2)}%
                 </span>
               </div>
             </div>
 
             {/* Heatmap Legend */}
-            <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400">
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-amber-400" /> Active Mapped
+            <div className="heavy-hex-legend">
+              <span className="heavy-hex-legend-item">
+                <span className="heavy-hex-dot amber" /> Active
               </span>
-              <span className="flex items-center gap-1">
-                <span className="w-2.5 h-1 rounded bg-red-500" /> SWAP Bus
+              <span className="heavy-hex-legend-item">
+                <span style={{ display: 'inline-block', width: 10, height: 4, borderRadius: 2, background: '#ef4444' }} /> SWAP Bus
               </span>
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-slate-700" /> Idle
+              <span className="heavy-hex-legend-item">
+                <span className="heavy-hex-dot idle" /> Idle
               </span>
             </div>
           </div>
@@ -478,36 +458,36 @@ export const HeavyHexPanel: React.FC<HeavyHexPanelProps> = ({
 
         {/* Selected Transmon Node Details Flyout */}
         {selectedNode && (
-          <div className="absolute bottom-4 right-4 z-20 p-3.5 rounded-xl bg-slate-900/90 backdrop-blur-md border border-cyan-500/40 shadow-xl text-xs space-y-2 max-w-[240px]">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
-              <span className="font-semibold text-cyan-300">
+          <div className="heavy-hex-node-flyout">
+            <div className="heavy-hex-flyout-top">
+              <span className="heavy-hex-flyout-title">
                 Transmon Qubit #{selectedNode.id}
               </span>
               <button
                 onClick={() => setSelectedNode(null)}
-                className="text-slate-500 hover:text-slate-300 text-sm"
+                className="heavy-hex-flyout-close"
               >
                 ✕
               </button>
             </div>
-            <div className="space-y-1 text-[11px] font-mono text-slate-300">
-              <div className="flex justify-between">
-                <span className="text-slate-500">T₁ Relaxation:</span>
-                <span className="text-slate-200">{selectedNode.t1_us} µs</span>
+            <div>
+              <div className="heavy-hex-flyout-row">
+                <span style={{ color: '#64748b' }}>T₁ Relaxation:</span>
+                <span style={{ color: '#e2e8f0' }}>{selectedNode.t1_us} µs</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">T₂ Dephasing:</span>
-                <span className="text-slate-200">{selectedNode.t2_us} µs</span>
+              <div className="heavy-hex-flyout-row">
+                <span style={{ color: '#64748b' }}>T₂ Dephasing:</span>
+                <span style={{ color: '#e2e8f0' }}>{selectedNode.t2_us} µs</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Readout Error:</span>
-                <span className="text-amber-400">
+              <div className="heavy-hex-flyout-row">
+                <span style={{ color: '#64748b' }}>Readout Error:</span>
+                <span style={{ color: '#fbbf24' }}>
                   {(selectedNode.readout_err * 100).toFixed(2)}%
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Coordinates:</span>
-                <span className="text-slate-400 text-[10px]">
+              <div className="heavy-hex-flyout-row">
+                <span style={{ color: '#64748b' }}>Coordinates:</span>
+                <span style={{ color: '#94a3b8', fontSize: 10 }}>
                   ({selectedNode.x}, {selectedNode.y})
                 </span>
               </div>
@@ -516,7 +496,7 @@ export const HeavyHexPanel: React.FC<HeavyHexPanelProps> = ({
         )}
 
         {/* Orbit Controls Hint */}
-        <div className="absolute bottom-3 left-4 z-10 text-[10px] text-slate-500 pointer-events-none">
+        <div className="heavy-hex-hint">
           Left-click + Drag to Rotate • Right-click to Pan • Scroll to Zoom
         </div>
       </div>
