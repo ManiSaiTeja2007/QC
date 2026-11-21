@@ -24,13 +24,23 @@ interface LiveSimulationWorkspaceProps {
 
 const LEGACY_PRESETS = ['1-bit-alu', 'falfg-gate', 'fredkin-gate', 'bennett-adder'];
 
+function normalizeArch(arch: string): string {
+  if (!arch) return '1-bit-alu';
+  const a = arch.toLowerCase().replace(/_/g, '-');
+  if (a.includes('falfg')) return 'falfg-gate';
+  if (a.includes('fredkin') || a.includes('cswap')) return 'fredkin-gate';
+  if (a.includes('bennett') || a.includes('uncompute') || (a.includes('adder') && !a.includes('alu'))) return 'bennett-adder';
+  if (a.includes('1-bit') || a.includes('alu')) return '1-bit-alu';
+  return arch;
+}
+
 export const LiveSimulationWorkspace: React.FC<LiveSimulationWorkspaceProps> = ({
   initialArchitecture = '1-bit-alu',
   onArchChange,
   onNavigateToVerilogStudio,
 }) => {
   // Simulation controls — architecture is also driven externally by sidebar
-  const [architecture, setArchitectureState] = useState<string>(initialArchitecture);
+  const [architecture, setArchitectureState] = useState<string>(() => normalizeArch(initialArchitecture));
   const [synthesis, setSynthesis] = useState<string>('clifford_t');
   const [preset, setPreset] = useState<string>('Full Adder');
   const [rightPanelView, setRightPanelView] = useState<'bloch' | 'heavy_hex'>('heavy_hex');
@@ -52,13 +62,14 @@ export const LiveSimulationWorkspace: React.FC<LiveSimulationWorkspaceProps> = (
 
   // Sync when sidebar or modal changes the architecture
   useEffect(() => {
-    setArchitectureState(initialArchitecture);
+    setArchitectureState(normalizeArch(initialArchitecture));
   }, [initialArchitecture]);
 
   // Wrapper that also notifies App so selectedArch stays in sync
   const setArchitecture = (arch: string) => {
-    setArchitectureState(arch);
-    onArchChange?.(arch);
+    const norm = normalizeArch(arch);
+    setArchitectureState(norm);
+    onArchChange?.(norm);
   };
 
   const [inputBits, setInputBits] = useState<number[]>([1, 1, 1, 0, 1, 1, 0]);
@@ -267,9 +278,10 @@ export const LiveSimulationWorkspace: React.FC<LiveSimulationWorkspaceProps> = (
         </button>
       </div>
 
-      {/* Dedicated IEEE TETC Table VI ALU Operations Command Dock */}
-      {architecture === '1-bit-alu' && (
+      {/* Dedicated Reversible Operation Command Dock (1-Bit ALU, FALFG 5x5, Fredkin 3x3, Bennett Adder) */}
+      {['1-bit-alu', 'falfg-gate', 'fredkin-gate', 'bennett-adder'].includes(architecture) && (
         <AluOperationsDeck
+          architecture={architecture}
           synthesis={synthesis}
           onSimulationLoaded={(data) => {
             setSimulationData(data);

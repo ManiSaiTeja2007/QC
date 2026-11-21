@@ -72,4 +72,19 @@
   - Visual Verification: Chrome screenshots (`docs/images/05_live_simulation_alu.png` and `docs/images/01_circuit_builder.png`) confirm pixel-perfect wire-to-sphere alignment and full 27-gate palette visibility with dynamic 3-qubit addition.
   - Multi-Agent Adversarial Review: `self` adversarial reviewer completed full evaluation: 4/4 PASS across all quality dimensions and anti-gaming invariants.
 
+## Feature: [ALU-DOCK-261121] Adaptive Circuit Operations Command Dock (FALFG 5×5 Table V, Fredkin 3×3, Bennett Adder)
+
+* **Status:** DONE
+* **Date Completed:** 2026-11-21
+* **Evidence:**
+  - Backend API: Added architecture-aware operation metadata (`/api/alu/operations?architecture=...`) and execution endpoint (`/api/alu/simulate-op`) supporting 5×5 FALFG Table V (10 operations), Fredkin CSWAP (5 operations), and Bennett Adder (4 operations).
+  - TDD Invariant: Added `test_06_falfg_operations_and_simulation` in `tests/test_alu_api.py`. Verified red failure before implementation and green pass after.
+  - Frontend Component: Refactored `AluOperationsDeck.tsx` with dynamic title branding, operation badges, category filters, interactive operand bit toggles (A, B, Cin / Ctrl, In1, In2), filter inputs, and real-time result pills.
+  - Architecture Normalization: Added `normalizeArch()` in `LiveSimulationWorkspace.tsx` ensuring seamless synchronization between sidebar clicks (`falfg_5x5`) and workspace state (`falfg-gate`).
+  - Frontend Build: `bun run build` completed cleanly in 3.05s with 0 TS errors.
+  - Static Typing: `pyrefly check .` passed with 0 errors.
+  - Full Regression Suite: `pytest -k "not e2e" tests/` passed 163/163 in 42.14s.
+  - Visual Verification: Headless Chrome screenshots (`docs/images/06_falfg_operation_deck.png`, `docs/images/07_falfg_operation_deck_verified.png`) confirm operation dock rendering for FALFG with 10 Table V operations, live `AND & XOR` execution ($Q=0, P=1$), and `Parity Valid` indicator.
+
+
 

@@ -379,15 +379,19 @@ export async function exportDualCircuits(payload: {
 
 export interface AluOperationSpec {
   name: string;
-  category: 'logic' | 'arithmetic';
-  m: number;
-  s0: number;
+  category: 'logic' | 'arithmetic' | 'routing' | 'uncomputed';
+  m?: number;
+  s0?: number;
   s0_label?: string;
-  s1: number;
-  s2: number;
-  s3: number;
+  s1?: number;
+  s2?: number;
+  s3?: number;
+  c?: number;
+  c_label?: string;
+  d?: number;
+  e?: number;
   b_fixed?: number | null;
-  formula: string;
+  formula?: string;
   description: string;
 }
 
@@ -399,18 +403,19 @@ export interface AluOperationsResponse {
 }
 
 export interface AluSimulateOpRequest {
+  architecture?: string;
   operation: string;
   a: number;
   b: number;
-  cin: number;
+  cin?: number;
   synthesis: string;
 }
 
 export interface AluMetadata {
   operation: string;
-  mode: 'logic' | 'arithmetic';
+  mode: 'logic' | 'arithmetic' | 'routing' | 'uncomputed';
   operands: { a: number; b: number; cin: number };
-  controls: { M: number; S0: number; S1: number; S2: number; S3: number };
+  controls: { [key: string]: any; M?: number; S0?: number; S1?: number; S2?: number; S3?: number };
   expected_result: number | null;
   expected_carry: number | null;
   measured_result: number;
@@ -457,8 +462,11 @@ export interface CodeExportResponse {
   verilog_hdl: string;
 }
 
-export async function fetchAluOperations(): Promise<AluOperationsResponse> {
-  const response = await fetch(`${API_BASE}/alu/operations`);
+export async function fetchAluOperations(architecture?: string): Promise<AluOperationsResponse> {
+  const url = architecture
+    ? `${API_BASE}/alu/operations?architecture=${encodeURIComponent(architecture)}`
+    : `${API_BASE}/alu/operations`;
+  const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`Failed to fetch ALU operations: ${response.statusText}`);
   }

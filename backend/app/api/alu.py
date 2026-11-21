@@ -31,11 +31,125 @@ router = APIRouter()
 
 
 class ALUSimulateOpRequest(BaseModel):
+    architecture: Optional[str] = Field("1-bit-alu", description="Target circuit architecture")
     operation: str = Field(..., description="Name of the operation (e.g. 'Full Adder', 'AND', 'XOR')")
     a: int = Field(0, ge=0, le=1, description="Data operand A (0 or 1)")
     b: int = Field(0, ge=0, le=1, description="Data operand B (0 or 1)")
     cin: int = Field(0, ge=0, le=1, description="Carry/Borrow input (0 or 1)")
     synthesis: str = Field("clifford_t", description="Synthesis library ('clifford_t' or 'ncv')")
+
+
+# 5x5 FALFG Table V Specifications (IEEE TETC 2026)
+FALFG_LOGIC_OPERATIONS = {
+    "AND & XOR": {
+        "name": "AND & XOR",
+        "category": "logic",
+        "C": 0, "D": 0, "E": 0,
+        "func": lambda a, b: a ^ b,              # Q (Sum / Logic XOR)
+        "carry_func": lambda a, b: a & b,          # P (Carry / Logic AND)
+        "formula": "P = A·B (AND), Q = A⊕B (XOR)",
+        "description": "Table V Logic: AND on P, XOR on Q",
+    },
+    "A'B & XOR": {
+        "name": "A'B & XOR",
+        "category": "logic",
+        "C": 0, "D": 1, "E": 0,
+        "func": lambda a, b: a ^ b,              # Q (Sum / Logic XOR)
+        "carry_func": lambda a, b: (1 - a) & b,    # P (Carry / Logic A'B)
+        "formula": "P = A'·B, Q = A⊕B (XOR)",
+        "description": "Table V Logic: A'·B on P, XOR on Q",
+    },
+    "OR & XNOR": {
+        "name": "OR & XNOR",
+        "category": "logic",
+        "C": 1, "D": 0, "E": 0,
+        "func": lambda a, b: (a ^ b) ^ 1,        # Q (XNOR)
+        "carry_func": lambda a, b: a | b,          # P (OR)
+        "formula": "P = A+B (OR), Q = (A⊕B)' (XNOR)",
+        "description": "Table V Logic: OR on P, XNOR on Q",
+    },
+    "A'+B & XNOR": {
+        "name": "A'+B & XNOR",
+        "category": "logic",
+        "C": 1, "D": 1, "E": 0,
+        "func": lambda a, b: (a ^ b) ^ 1,        # Q (XNOR)
+        "carry_func": lambda a, b: (1 - a) | b,    # P (A'+B)
+        "formula": "P = A'+B, Q = (A⊕B)' (XNOR)",
+        "description": "Table V Logic: A'+B on P, XNOR on Q",
+    },
+}
+
+FALFG_ARITHMETIC_OPERATIONS = {
+    "Full Adder": {
+        "name": "Full Adder",
+        "category": "arithmetic",
+        "C": "Cin", "D": 0, "E": 0,
+        "sum_func": lambda a, b, cin: a ^ b ^ cin,
+        "carry_func": lambda a, b, cin: (a & b) | (b & cin) | (a & cin),
+        "formula": "Sum = A⊕B⊕Cin, Cout = AB+BCin+ACin",
+        "description": "Table V Arithmetic: Full Adder",
+    },
+    "Full Subtractor": {
+        "name": "Full Subtractor",
+        "category": "arithmetic",
+        "C": "Bin", "D": 1, "E": 0,
+        "diff_func": lambda a, b, bin_: a ^ b ^ bin_,
+        "borrow_func": lambda a, b, bin_: ((1 - a) & b) | (b & bin_) | ((1 - a) & bin_),
+        "formula": "Diff = A⊕B⊕Bin, Bout = A'B+BBin+A'Bin",
+        "description": "Table V Arithmetic: Full Subtractor",
+    },
+    "Half Adder": {
+        "name": "Half Adder",
+        "category": "arithmetic",
+        "C": 0, "D": 0, "E": 0,
+        "sum_func": lambda a, b, cin: a ^ b,
+        "carry_func": lambda a, b, cin: a & b,
+        "formula": "Sum = A⊕B, Cout = AB",
+        "description": "Table V Arithmetic: Half Adder",
+    },
+    "Half Subtractor": {
+        "name": "Half Subtractor",
+        "category": "arithmetic",
+        "C": 0, "D": 1, "E": 0,
+        "diff_func": lambda a, b, bin_: a ^ b,
+        "borrow_func": lambda a, b, bin_: (1 - a) & b,
+        "formula": "Diff = A⊕B, Bout = A'B",
+        "description": "Table V Arithmetic: Half Subtractor",
+    },
+    "Increment A": {
+        "name": "Increment A",
+        "category": "arithmetic",
+        "B": 0, "C": 1, "D": 0, "E": 0,
+        "sum_func": lambda a, b, cin: (a + 1) & 1,
+        "carry_func": lambda a, b, cin: a,
+        "formula": "Q = A+1, P = Carry",
+        "description": "Table V Arithmetic: Increment A (A+1)",
+    },
+    "Decrement A": {
+        "name": "Decrement A",
+        "category": "arithmetic",
+        "B": 0, "C": 1, "D": 1, "E": 0,
+        "diff_func": lambda a, b, bin_: (a - 1) & 1,
+        "borrow_func": lambda a, b, bin_: (1 - a) & 1,
+        "formula": "Q = A-1, P = Borrow",
+        "description": "Table V Arithmetic: Decrement A (A-1)",
+    },
+}
+
+FREDKIN_OPERATIONS = {
+    "Pass-Through (Ctrl=0)": {"category": "routing", "description": "Routing: No swap when Ctrl=0"},
+    "Controlled SWAP (Ctrl=1)": {"category": "routing", "description": "Routing: Swaps targets when Ctrl=1"},
+    "Reversible AND": {"category": "logic", "description": "Logic: Out2 = Ctrl · In1 (In2=0)"},
+    "Reversible OR": {"category": "logic", "description": "Logic: Out1 = Ctrl + In2 (In1=1)"},
+    "2-to-1 MUX": {"category": "routing", "description": "Multiplexer: Routes In1 or In2 based on Ctrl"},
+}
+
+BENNETT_OPERATIONS = {
+    "Full Addition (Cin=0)": {"category": "arithmetic", "description": "Pebble Game Full Addition with Cin=0"},
+    "Full Addition (Cin=1)": {"category": "arithmetic", "description": "Pebble Game Full Addition with Cin=1"},
+    "Full Subtractor (Bin=1)": {"category": "arithmetic", "description": "Pebble Game Full Subtraction with Bin=1"},
+    "Zero-Garbage Uncomputed Clean Mode": {"category": "uncomputed", "description": "Uncomputes scratch ancilla to restore |0> ground state"},
+}
 
 
 class NoiseSimulationRequest(BaseModel):
@@ -56,8 +170,87 @@ class CodeExportRequest(BaseModel):
 
 
 @router.get("/operations")
-def get_alu_operations():
-    """Returns structured metadata for all 28 Table VI ALU operations."""
+def get_alu_operations(architecture: str = "1-bit-alu"):
+    """Returns structured metadata for ALU operations based on selected architecture."""
+    arch = (architecture or "1-bit-alu").lower()
+
+    if "falfg" in arch:
+        logic_list = [
+            {
+                "name": name,
+                "category": spec["category"],
+                "c": spec["C"],
+                "d": spec["D"],
+                "e": spec["E"],
+                "formula": spec["formula"],
+                "description": spec["description"],
+            }
+            for name, spec in FALFG_LOGIC_OPERATIONS.items()
+        ]
+        arith_list = [
+            {
+                "name": name,
+                "category": spec["category"],
+                "c": spec["C"] if isinstance(spec["C"], int) else 0,
+                "c_label": str(spec["C"]),
+                "d": spec["D"],
+                "e": spec["E"],
+                "b_fixed": spec.get("B", None),
+                "formula": spec["formula"],
+                "description": spec["description"],
+            }
+            for name, spec in FALFG_ARITHMETIC_OPERATIONS.items()
+        ]
+        return {
+            "total_operations": len(logic_list) + len(arith_list),
+            "logic_operations": logic_list,
+            "arithmetic_operations": arith_list,
+            "qubit_mapping": [
+                {"index": 0, "name": "P (Carry/Borrow)", "role": "Output Carry / Borrow / Logic P"},
+                {"index": 1, "name": "Q (Sum/Diff)", "role": "Output Sum / Diff / Logic Q"},
+                {"index": 2, "name": "C (Cin/Sel)", "role": "Carry In / Mode Select C"},
+                {"index": 3, "name": "D (Sel)", "role": "Add(0)/Sub(1) Select D"},
+                {"index": 4, "name": "E (Mode)", "role": "Mode / Don't Care E"},
+            ]
+        }
+    elif "fredkin" in arch or "cswap" in arch:
+        ops = [
+            {"name": name, "category": spec["category"], "description": spec["description"]}
+            for name, spec in FREDKIN_OPERATIONS.items()
+        ]
+        return {
+            "total_operations": len(ops),
+            "logic_operations": [o for o in ops if o["category"] == "logic"],
+            "arithmetic_operations": [o for o in ops if o["category"] != "logic"],
+            "qubit_mapping": [
+                {"index": 0, "name": "Control", "role": "Control line"},
+                {"index": 1, "name": "Target 1", "role": "Target line 1"},
+                {"index": 2, "name": "Target 2", "role": "Target line 2"},
+            ]
+        }
+    elif "bennett" in arch or "uncompute" in arch:
+        ops = [
+            {"name": name, "category": spec["category"], "description": spec["description"]}
+            for name, spec in BENNETT_OPERATIONS.items()
+        ]
+        return {
+            "total_operations": len(ops),
+            "logic_operations": [o for o in ops if o["category"] == "uncomputed"],
+            "arithmetic_operations": [o for o in ops if o["category"] == "arithmetic"],
+            "qubit_mapping": [
+                {"index": 0, "name": "A", "role": "Operand A"},
+                {"index": 1, "name": "B", "role": "Operand B"},
+                {"index": 2, "name": "Cin", "role": "Carry in"},
+                {"index": 3, "name": "Sel", "role": "Select"},
+                {"index": 4, "name": "Mode", "role": "Mode"},
+                {"index": 5, "name": "Cout", "role": "Carry out"},
+                {"index": 6, "name": "Sum", "role": "Sum output"},
+                {"index": 7, "name": "Cout'", "role": "Uncomputed Carry ancilla"},
+                {"index": 8, "name": "Sum'", "role": "Uncomputed Sum ancilla"},
+            ]
+        }
+
+    # Default to 1-Bit ALU
     logic_list = []
     for name, spec in ALU_LOGIC_OPERATIONS.items():
         logic_list.append({
@@ -108,7 +301,164 @@ def get_alu_operations():
 @router.post("/simulate-op")
 def simulate_alu_operation(req: ALUSimulateOpRequest):
     """Executes a named ALU operation with automatic control-line mapping and parity check."""
+    arch = (req.architecture or "1-bit-alu").lower()
     op_name = req.operation.strip()
+    is_ct = "clifford" in req.synthesis.lower()
+
+    if "falfg" in arch:
+        is_logic = op_name in FALFG_LOGIC_OPERATIONS
+        is_arith = op_name in FALFG_ARITHMETIC_OPERATIONS
+        if not is_logic and not is_arith:
+            raise HTTPException(status_code=400, detail=f"Unknown FALFG operation: {req.operation}")
+
+        spec = FALFG_LOGIC_OPERATIONS[op_name] if is_logic else FALFG_ARITHMETIC_OPERATIONS[op_name]
+        d_val = spec["D"]
+        e_val = spec["E"]
+        c_spec = spec["C"]
+        c_val = req.cin if c_spec in ("Cin", "Bin") else int(c_spec)
+        b_val = spec.get("B", req.b)
+        a_val = req.a
+
+        input_bits = [a_val, b_val, c_val, d_val, e_val]
+        qc = build_falfg_clifford_t() if is_ct else build_falfg_ncv()
+
+        expected_result = None
+        expected_carry = None
+        if is_logic:
+            expected_result = spec["func"](a_val, b_val)
+            expected_carry = spec["carry_func"](a_val, b_val)
+        else:
+            if "sum_func" in spec:
+                expected_result = spec["sum_func"](a_val, b_val, c_val)
+                expected_carry = spec["carry_func"](a_val, b_val, c_val)
+            elif "diff_func" in spec:
+                expected_result = spec["diff_func"](a_val, b_val, c_val)
+                expected_carry = spec["borrow_func"](a_val, b_val, c_val)
+
+        ir_payload = build_canonical_circuit_ir(qc, input_bits)
+        metrics = analyze_circuit_cost(qc)
+
+        measured_p = ir_payload["output_bits"][0]
+        measured_q = ir_payload["output_bits"][1]
+
+        qubit_names = [
+            f"Q0 P={measured_p} (Carry/Borrow)",
+            f"Q1 Q={measured_q} (Sum/Diff)",
+            f"Q2 C={c_val} (Cin)",
+            f"Q3 D={d_val} (Sel)",
+            f"Q4 E={e_val} (Mode)"
+        ]
+
+        ir_payload["circuit_name"] = f"5×5 FALFG: {op_name}"
+        ir_payload["qubit_names"] = qubit_names
+        ir_payload["metrics"] = metrics
+        ir_payload["alu_metadata"] = {
+            "operation": op_name,
+            "mode": "logic" if is_logic else "arithmetic",
+            "operands": {"a": a_val, "b": b_val, "cin": c_val},
+            "controls": {"C": c_val, "D": d_val, "E": e_val, "M": d_val, "S0": c_val, "S1": 0, "S2": 0, "S3": 0},
+            "expected_result": expected_result,
+            "expected_carry": expected_carry,
+            "measured_result": measured_q,
+            "measured_carry": measured_p,
+            "result_match": (expected_result == measured_q) if expected_result is not None else True,
+            "parity_preserved": ir_payload["parity_preserved"]
+        }
+        return ir_payload
+
+    elif "fredkin" in arch or "cswap" in arch:
+        from backend.app.gates.basic_gates import build_fredkin_circuit
+        qc = build_fredkin_circuit("clifford_t" if is_ct else "ncv")
+
+        # Map UI operands: req.a = Ctrl, req.b = In1, req.cin = In2
+        ctrl_val = req.a
+        in1_val = req.b
+        in2_val = req.cin
+
+        if "Pass-Through" in op_name:
+            input_bits = [0, in1_val, in2_val]
+            expected_result = in1_val
+            expected_carry = in2_val
+        elif "SWAP" in op_name:
+            input_bits = [1, in1_val, in2_val]
+            expected_result = in2_val
+            expected_carry = in1_val
+        elif "AND" in op_name:
+            # Reversible AND: Ctrl=A, In1=0, In2=B -> Out1 = A·B, Out2 = A'·B
+            input_bits = [ctrl_val, 0, in1_val]
+            expected_result = ctrl_val & in1_val
+            expected_carry = (1 - ctrl_val) & in1_val
+        elif "OR" in op_name:
+            # Reversible OR: Ctrl=A, In1=B, In2=1 -> Out1 = A+B, Out2 = A'+B
+            input_bits = [ctrl_val, in1_val, 1]
+            expected_result = ctrl_val | in1_val
+            expected_carry = (1 - ctrl_val) | in1_val
+        else:
+            # 2-to-1 MUX: Ctrl selects In2 if 1, In1 if 0
+            input_bits = [ctrl_val, in1_val, in2_val]
+            expected_result = in2_val if ctrl_val == 1 else in1_val
+            expected_carry = in1_val if ctrl_val == 1 else in2_val
+
+        ir_payload = build_canonical_circuit_ir(qc, input_bits)
+        metrics = analyze_circuit_cost(qc)
+        out1 = ir_payload["output_bits"][1]
+        out2 = ir_payload["output_bits"][2]
+
+        ir_payload["circuit_name"] = f"3×3 Fredkin: {op_name}"
+        ir_payload["qubit_names"] = [f"Q0 Ctrl={input_bits[0]}", f"Q1 Out1={out1}", f"Q2 Out2={out2}"]
+        ir_payload["metrics"] = metrics
+        ir_payload["alu_metadata"] = {
+            "operation": op_name,
+            "mode": "logic",
+            "operands": {"a": ctrl_val, "b": in1_val, "cin": in2_val},
+            "controls": {"Ctrl": input_bits[0], "In1": input_bits[1], "In2": input_bits[2], "M": 0, "S0": 0, "S1": 0, "S2": 0, "S3": 0},
+            "expected_result": expected_result,
+            "expected_carry": expected_carry,
+            "measured_result": out1,
+            "measured_carry": out2,
+            "result_match": (expected_result == out1) and (expected_carry == out2),
+            "parity_preserved": ir_payload["parity_preserved"]
+        }
+        return ir_payload
+
+    elif "bennett" in arch or "uncompute" in arch:
+        from backend.app.modules.uncomputation import build_uncomputed_adder_subtractor
+        qc = build_uncomputed_adder_subtractor()
+        is_sub = "Subtractor" in op_name
+        is_clean = "Clean" in op_name
+        cin_val = req.cin if req.cin is not None else (1 if ("Cin=1" in op_name or is_sub) else 0)
+        input_bits = [req.a, req.b, cin_val, 1 if is_sub else 0, 1 if is_clean else 0, 0, 0, 0, 0]
+
+        ir_payload = build_canonical_circuit_ir(qc, input_bits)
+        metrics = analyze_circuit_cost(qc)
+        sum_val = ir_payload["output_bits"][6]
+        cout_val = ir_payload["output_bits"][5]
+
+        # Theoretical Ground Truth expectation
+        if is_sub:
+            expected_result = req.a ^ req.b ^ cin_val
+            expected_carry = ((1 - req.a) & req.b) | (req.b & cin_val) | ((1 - req.a) & cin_val)
+        else:
+            expected_result = req.a ^ req.b ^ cin_val
+            expected_carry = (req.a & req.b) | (req.b & cin_val) | (req.a & cin_val)
+
+        ir_payload["circuit_name"] = f"Bennett Adder: {op_name}"
+        ir_payload["metrics"] = metrics
+        ir_payload["alu_metadata"] = {
+            "operation": op_name,
+            "mode": "arithmetic",
+            "operands": {"a": req.a, "b": req.b, "cin": cin_val},
+            "controls": {"Mode": input_bits[4], "Sel": input_bits[3], "M": 1, "S0": cin_val, "S1": 0, "S2": 0, "S3": 0},
+            "expected_result": expected_result,
+            "expected_carry": expected_carry,
+            "measured_result": sum_val,
+            "measured_carry": cout_val,
+            "result_match": (expected_result == sum_val) and (expected_carry == cout_val),
+            "parity_preserved": ir_payload["parity_preserved"]
+        }
+        return ir_payload
+
+    # Default to 1-Bit ALU
     is_logic = op_name in ALU_LOGIC_OPERATIONS
     is_arith = op_name in ALU_ARITHMETIC_OPERATIONS
 
@@ -135,7 +485,6 @@ def simulate_alu_operation(req: ALUSimulateOpRequest):
     input_bits = [a_val, b_val, s0_val, s1_val, m_val, s2_val, s3_val]
 
     # Synthesize target circuit
-    is_ct = "clifford" in req.synthesis.lower()
     qc = build_one_bit_alu_clifford_t() if is_ct else build_one_bit_alu_ncv()
 
     # Compute theoretical expected output
