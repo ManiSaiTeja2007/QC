@@ -193,12 +193,36 @@ def simulate_noisy_circuit(req: NoiseSimulationRequest):
     is_ct = "clifford" in req.synthesis.lower()
     arch = req.architecture.lower()
 
-    if "alu" in arch or "1-bit" in arch:
+    if "alu" in arch or "1-bit" in arch or "one_bit" in arch:
         qc = build_one_bit_alu_clifford_t() if is_ct else build_one_bit_alu_ncv()
     elif "falfg" in arch:
         qc = build_falfg_clifford_t() if is_ct else build_falfg_ncv()
+    elif "fredkin" in arch or "cswap" in arch:
+        from backend.app.gates.basic_gates import build_fredkin_circuit
+        qc = build_fredkin_circuit("clifford_t" if is_ct else "ncv")
+    elif "bennett" in arch or "uncompute" in arch:
+        from backend.app.modules.uncomputation import build_uncomputed_adder_subtractor
+        qc = build_uncomputed_adder_subtractor()
     else:
-        qc = build_one_bit_alu_clifford_t()
+        from backend.app.api.circuits import circuit_storage
+        circuit_data = circuit_storage.get_circuit(req.architecture)
+        if circuit_data:
+            qc = QuantumCircuit(circuit_data.num_qubits)
+            for g in circuit_data.gates:
+                name = g.name.lower()
+                qubits = g.qubits
+                if name == "x": qc.x(qubits[0])
+                elif name == "h": qc.h(qubits[0])
+                elif name == "y": qc.y(qubits[0])
+                elif name == "z": qc.z(qubits[0])
+                elif name == "s": qc.s(qubits[0])
+                elif name == "t": qc.t(qubits[0])
+                elif name == "tdg": qc.tdg(qubits[0])
+                elif name == "cx" and len(qubits) >= 2: qc.cx(qubits[0], qubits[1])
+                elif name in ("cswap", "fredkin") and len(qubits) >= 3: qc.cswap(qubits[0], qubits[1], qubits[2])
+                elif name in ("ccx", "toffoli") and len(qubits) >= 3: qc.ccx(qubits[0], qubits[1], qubits[2])
+        else:
+            qc = build_one_bit_alu_clifford_t() if is_ct else build_one_bit_alu_ncv()
 
     n = qc.num_qubits
     input_bits = req.input_bits[:n] if len(req.input_bits) >= n else req.input_bits + [0] * (n - len(req.input_bits))

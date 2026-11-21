@@ -76,10 +76,23 @@ export const PhysicalNoiseDrawer: React.FC<PhysicalNoiseDrawerProps> = ({
         borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
         background: 'rgba(15, 23, 42, 0.9)',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
           <Activity size={16} style={{ color: '#fbbf24' }} />
           <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#f1f5f9' }}>
             Physical Transmon Noise Studio
+          </span>
+          <span style={{
+            fontSize: '0.62rem',
+            padding: '2px 7px',
+            borderRadius: 4,
+            background: 'rgba(56, 189, 248, 0.15)',
+            border: '1px solid rgba(56, 189, 248, 0.3)',
+            color: '#38bdf8',
+            fontFamily: 'var(--font-mono)',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+          }}>
+            {architecture}
           </span>
         </div>
         <button

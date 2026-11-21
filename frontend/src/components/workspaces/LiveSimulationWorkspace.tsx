@@ -14,6 +14,7 @@ import { AluOperationsDeck } from '../alu/AluOperationsDeck';
 import { PhysicalNoiseDrawer } from '../alu/PhysicalNoiseDrawer';
 import { CodeExportModal } from '../modals/CodeExportModal';
 import { HeavyHexPanel } from '../HeavyHexPanel';
+import { Activity } from 'lucide-react';
 
 interface LiveSimulationWorkspaceProps {
   initialArchitecture?: string;
@@ -238,6 +239,31 @@ export const LiveSimulationWorkspace: React.FC<LiveSimulationWorkspaceProps> = (
           onClick={() => setIsExportModalOpen(true)}
         >
           📥 Export Code
+        </button>
+
+        {/* Global Physical Noise Studio Button (Accessible across ALL circuits: 1-Bit ALU, 5x5 FALFG, Fredkin, Bennett, etc.) */}
+        <button
+          className="btn btn-sm"
+          onClick={() => setIsNoiseDrawerOpen(true)}
+          style={{
+            marginLeft: 6,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            background: 'rgba(234, 179, 8, 0.15)',
+            border: '1px solid rgba(234, 179, 8, 0.45)',
+            color: '#fbbf24',
+            padding: '5px 12px',
+            borderRadius: 6,
+            fontSize: '0.74rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+          }}
+          title="Open Physical Noise Studio to simulate open-system transmon noise (depolarizing, T1/T2 relaxation, and state fidelity)"
+        >
+          <Activity size={14} />
+          <span>Physical Noise Studio</span>
         </button>
       </div>
 
